@@ -1,0 +1,20 @@
+<div class="erp-shell">
+  <app-sidebar></app-sidebar>
+  <section class="erp-main">
+    <app-header></app-header>
+
+    <div class="breadcrumb-strip">
+      <nav class="erp-breadcrumb" aria-label="Breadcrumb">
+        <ng-container *ngFor="let item of breadcrumbs; let last = last">
+          <a *ngIf="breadcrumbUrl(item, last) as url; else plainCrumb" [routerLink]="url" (click)="goBreadcrumb(item, last, $event)">{{ item.label }}</a>
+          <ng-template #plainCrumb><span>{{ item.label }}</span></ng-template>
+          <i *ngIf="!last" class="pi pi-angle-right"></i>
+        </ng-container>
+      </nav>
+    </div>
+
+    <main class="erp-content">
+      <router-outlet></router-outlet>
+    </main>
+  </section>
+</div>

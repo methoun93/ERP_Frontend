@@ -1,0 +1,58 @@
+<main class="login-root">
+  <section class="login-panel">
+    <div class="brand-row">
+      <div class="brand-logo">E</div>
+      <div>
+        <div class="brand-title">ERP<span>Suite</span></div>
+        <div class="brand-subtitle">RMG & Textile Platform</div>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-pill"><span></span> Scalable ERP for Bangladesh RMG Industry</div>
+      <h1>One platform.<br />Every module.<br /><span>Full control.</span></h1>
+      <p>Complete ERP — HR, Payroll, Merchandising, Production, Accounts and more in one system.</p>
+      <div class="module-tags">
+        <span *ngFor="let module of modules">{{ module }}</span>
+      </div>
+    </div>
+
+    <p class="copyright">© 2026 ERPSuite. All rights reserved.</p>
+  </section>
+
+  <section class="login-right">
+    <form class="login-card" (ngSubmit)="submit()">
+      <div class="mobile-brand">
+        <div class="brand-logo small">E</div>
+        <div>
+          <div class="mobile-title">ERP<span>Suite</span></div>
+          <div class="mobile-subtitle">RMG & Textile Platform</div>
+        </div>
+      </div>
+
+      <div class="card-heading">
+        <span class="step-pill">Secure Login</span>
+        <h2>Welcome back!</h2>
+        <p>Sign in to access your workspace.</p>
+      </div>
+
+      <div *ngIf="error" class="error-box">{{ error }}</div>
+
+      <label>Username</label>
+      <input class="erp-input" name="username" [(ngModel)]="username" placeholder="admin" autocomplete="username" required />
+
+      <label>Password</label>
+      <div class="password-row">
+        <input class="erp-input" name="password" [(ngModel)]="password" [type]="showPassword ? 'text' : 'password'" placeholder="••••••" autocomplete="current-password" required />
+        <button type="button" (click)="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
+      </div>
+
+      <div class="form-row">
+        <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="remember" /> Remember me</label>
+        <a routerLink="/login">Forgot password?</a>
+      </div>
+
+      <button class="btn-primary" type="submit" [disabled]="loading">{{ loading ? 'Signing in...' : 'Sign in' }}</button>
+    </form>
+  </section>
+</main>

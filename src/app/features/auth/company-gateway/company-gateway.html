@@ -1,0 +1,76 @@
+<main class="gateway-root">
+  <section class="gateway-hero">
+    <div class="brand-row">
+      <div class="brand-logo light">E</div>
+      <div>
+        <div class="brand-title">ERP<span>Suite</span></div>
+        <div class="brand-subtitle">RMG & Textile Platform</div>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-pill"><span></span> Scalable ERP for Bangladesh RMG Industry</div>
+      <h1>One platform.<br />Every module.<br /><span>Full control.</span></h1>
+      <p>Complete ERP — HR, Payroll, Merchandising, Production, Accounts and more in one system.</p>
+      <div class="module-tags">
+        <span>HRM</span>
+        <span>Payroll</span>
+        <span>Merchandising</span>
+        <span>General Store</span>
+        <span>Yarn Store</span>
+        <span>Production</span>
+        <span>Quality</span>
+        <span>Accounts</span>
+        <span>Procurement</span>
+      </div>
+    </div>
+
+    <p class="copyright">© 2026 ERPSuite. All rights reserved.</p>
+  </section>
+
+  <section class="gateway-form-area">
+    <form class="gateway-card" (ngSubmit)="continue()">
+      <div class="card-brand">
+        <div class="brand-logo solid">E</div>
+        <h2>ERP<span>Suite</span></h2>
+        <p>RMG & Textile Platform</p>
+      </div>
+
+      <span class="step-pill"><i class="pi pi-building"></i> Company Gateway</span>
+      <h1>Select workspace</h1>
+      <p class="subtext">Choose company and area to continue.</p>
+
+      <div *ngIf="error" class="error-box">{{ error }}</div>
+      <div *ngIf="loading" class="info-box">Loading companies...</div>
+
+      <label>Company</label>
+      <select [(ngModel)]="companyId" name="companyId" (change)="loadAreas()">
+        <option value="">Select company</option>
+        <option *ngFor="let company of companies" [value]="company.companyId">
+          {{ company.companyName }} <ng-container *ngIf="company.shortName">({{ company.shortName }})</ng-container>
+        </option>
+      </select>
+
+      <label>Area</label>
+      <select [(ngModel)]="areaId" name="areaId" [disabled]="!companyId || areaLoading">
+        <option value="">{{ areaLoading ? 'Loading areas...' : 'Select area' }}</option>
+        <option *ngFor="let area of areas" [value]="area.areaId">
+          {{ area.areaName }} <ng-container *ngIf="area.shortName">({{ area.shortName }})</ng-container>
+        </option>
+      </select>
+
+      <div class="selected-context" *ngIf="companyId">
+        <i class="pi pi-building"></i>
+        <span>{{ selectedCompanyName }}</span>
+      </div>
+
+      <button class="btn-primary" type="submit" [disabled]="saving || areaLoading">
+        {{ saving ? 'Continuing...' : 'Continue to Dashboard' }}
+      </button>
+
+      <button class="text-button" type="button" (click)="logout()">Back to login</button>
+
+      <p class="help-text">Having trouble? <strong>Contact your administrator</strong></p>
+    </form>
+  </section>
+</main>

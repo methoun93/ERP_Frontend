@@ -1,0 +1,38 @@
+<div class="company-setup-page">
+  <app-erp-form-master
+    title="Company Information"
+    subtitle="Manage company profile and business configuration"
+    [formGroup]="companyForm"
+    [sections]="companySections"
+    [saving]="savingCompany"
+    (save)="saveCompany()"
+    (resetForm)="resetCompany()">
+  </app-erp-form-master>
+
+  <app-erp-data-table
+    title="Company List"
+    searchPlaceholder="Search by company name, code..."
+    [columns]="companyColumns"
+    [data]="companyRows"
+    [actions]="tableActions">
+  </app-erp-data-table>
+
+  <div class="area-grid">
+    <app-erp-form-master
+      title="Area Information"
+      [formGroup]="areaForm"
+      [sections]="areaSections"
+      [saving]="savingArea"
+      (save)="saveArea()"
+      (resetForm)="resetArea()">
+    </app-erp-form-master>
+
+    <app-erp-data-table
+      title="Area List"
+      searchPlaceholder="Search by area name, code..."
+      [columns]="areaColumns"
+      [data]="areaRows"
+      [actions]="tableActions">
+    </app-erp-data-table>
+  </div>
+</div>

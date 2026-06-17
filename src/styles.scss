@@ -1,1 +1,75 @@
-/* You can add global styles to this file, and also import other style files */
+@import "primeicons/primeicons.css";
+
+:root {
+  --erp-font: Inter, Arial, Helvetica, sans-serif;
+  --erp-bg: #f3f7f5;
+  --erp-surface: #ffffff;
+  --erp-border: #e1e9e5;
+  --erp-text: #17211b;
+  --erp-muted: #667085;
+  --erp-primary: #047857;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--erp-font);
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--erp-text);
+  background: var(--erp-bg);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; }
+a { cursor: pointer; }
+
+::selection { background: rgba(4,120,87,.16); }
+
+
+/* ERP responsive full-width layout safety */
+.erp-content > *,
+.crud-master,
+.table-card,
+.erp-form-card {
+  max-width: none;
+}
+
+@media (min-width: 1280px) {
+  .erp-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  html, body { font-size: 12px; }
+}
+
+
+/* Final ERP shell cleanup: no fixed workspace footer and no browser horizontal scrollbar */
+html, body { width: 100%; max-width: 100%; }
+app-erp-shell, .erp-shell, .erp-main, .erp-content { max-width: 100%; }
+
+/* ERP friendly toast messages */
+.p-toast {
+  width: min(460px, calc(100vw - 24px));
+}
+.p-toast .p-toast-message {
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+}
+.p-toast .p-toast-summary {
+  font-size: 13px;
+  font-weight: 700;
+}
+.p-toast .p-toast-detail {
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-line;
+  word-break: break-word;
+}

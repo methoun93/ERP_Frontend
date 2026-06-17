@@ -1,0 +1,42 @@
+<section class="module-hero">
+  <div>
+    <div class="eyebrow">{{ module?.label || 'ERP Suite' }}</div>
+    <h1>{{ pageTitle }}</h1>
+    <p>{{ pageSubtitle }}</p>
+  </div>
+  <span class="status-pill">Angular Ready</span>
+</section>
+
+@if (pageType === 'module') {
+  <section class="menu-grid">
+    @for (group of groups; track group.label) {
+      <article class="menu-card">
+        <div class="menu-title">
+          <i [class]="group.icon"></i>
+          <h3>{{ group.label }}</h3>
+        </div>
+        <div class="menu-links">
+          @for (child of group.children; track child.route) {
+            <a [routerLink]="child.route">{{ child.label }}</a>
+          }
+        </div>
+      </article>
+    }
+  </section>
+} @else {
+  <section class="page-card">
+    <div class="toolbar">
+      <div>
+        <h2>{{ pageTitle }}</h2>
+        <p>This page route has been mapped from the Next.js ERP structure.</p>
+      </div>
+      <button type="button">Create New</button>
+    </div>
+
+    <div class="table-placeholder">
+      <div class="placeholder-icon"><i class="pi pi-table"></i></div>
+      <h3>CRUD conversion pending</h3>
+      <p>Next phase will connect this page to the backend CRUD service and reusable table/form components.</p>
+    </div>
+  </section>
+}

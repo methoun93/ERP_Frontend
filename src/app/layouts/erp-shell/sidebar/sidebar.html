@@ -1,0 +1,67 @@
+<aside class="erp-sidebar">
+  <div class="sidebar-brand" routerLink="/erp/workspace">
+    <div class="brand-logo">E</div>
+    <div class="brand-copy">
+      <strong>ERP<span>Suite</span></strong>
+      <small>RMG & Textile Platform</small>
+    </div>
+  </div>
+
+  <a routerLink="/erp/workspace" (click)="showAllModules()" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="dashboard-link">
+    <i class="pi pi-home"></i>
+    <span>Dashboard</span>
+  </a>
+
+  <div class="sidebar-label">{{ activeModule ? activeModule.title : 'Select Module' }}</div>
+
+  <nav class="module-list">
+    <ng-container *ngIf="!activeModule; else activeModuleMenus">
+      <section class="module-group compact" *ngFor="let module of modules">
+        <button type="button" class="module-parent" (click)="openModule(module)">
+          <span class="parent-left">
+            <i [class]="module.icon || 'pi pi-folder'"></i>
+            <span>{{ module.title }}</span>
+          </span>
+          <i class="pi" [class.pi-spin]="loadingModuleId === module.id" [class.pi-spinner]="loadingModuleId === module.id" [class.pi-angle-right]="loadingModuleId !== module.id"></i>
+        </button>
+      </section>
+    </ng-container>
+
+    <ng-template #activeModuleMenus>
+      <ng-container *ngIf="activeModule as module">
+        <section class="module-group active-module-title">
+          <button type="button" class="module-parent selected-module" disabled>
+            <span class="parent-left">
+              <i [class]="module.icon || 'pi pi-folder-open'"></i>
+              <span>{{ module.title }}</span>
+            </span>
+          </button>
+        </section>
+
+        <section class="module-group" *ngFor="let menu of module.menus">
+          <button type="button" class="module-parent menu-parent" [class.active-parent]="isMenuOpen(menu)" (click)="toggleMenu(menu, $event)">
+            <span class="parent-left">
+              <i [class]="menu.icon || 'pi pi-circle'"></i>
+              <span>{{ menu.title }}</span>
+            </span>
+            <i class="pi" [class.pi-angle-down]="isMenuOpen(menu)" [class.pi-angle-right]="!isMenuOpen(menu)"></i>
+          </button>
+
+          <div class="submenu-list" [class.open]="isMenuOpen(menu)" *ngIf="menu.subMenus.length">
+            <a *ngFor="let sub of menu.subMenus" [routerLink]="sub.route" routerLinkActive="active" [class.active]="isSubMenuActive(sub.route)" class="submenu-link">
+              <span class="dot"></span>
+              <i *ngIf="sub.icon" [class]="sub.icon"></i>
+              <span>{{ sub.title }}</span>
+            </a>
+          </div>
+        </section>
+
+        <div class="empty-menu-state" *ngIf="!module.menus.length && loadingModuleId !== module.id">
+          <i class="pi pi-info-circle"></i>
+          <span>No menu found for this module.</span>
+        </div>
+      </ng-container>
+    </ng-template>
+  </nav>
+
+</aside>

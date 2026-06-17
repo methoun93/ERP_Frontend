@@ -1,0 +1,24 @@
+.dynamic-page-card {
+  min-height: 260px;
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(6, 78, 59, .08);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 28px;
+}
+.dynamic-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 24px;
+}
+h1 { margin: 0 0 8px; color: #064e3b; font-size: 24px; font-weight: 950; }
+p { margin: 0 0 14px; color: #64748b; }
+code { display: inline-flex; max-width: 100%; overflow: auto; padding: 8px 10px; border-radius: 8px; background: #f8fafc; color: #334155; }

@@ -1,0 +1,6 @@
+.not-found-shell { min-height: calc(100vh - 130px); display: grid; place-items: center; padding: 24px; }
+.not-found-card { width: min(520px, 100%); text-align: center; padding: 34px; border: 1px solid #bbf7d0; border-radius: 18px; background: #fff; box-shadow: 0 18px 50px rgba(15, 118, 110, .10); }
+.code { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 18px; border-radius: 999px; background: #dcfce7; color: #047857; font-weight: 900; }
+h1 { margin: 18px 0 8px; color: #064e3b; font-size: 32px; }
+p { margin: 0 auto 20px; color: #64748b; max-width: 390px; }
+a { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 18px; border-radius: 10px; background: #059669; color: #fff; text-decoration: none; font-weight: 800; }

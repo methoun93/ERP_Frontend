@@ -1,0 +1,19 @@
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { MessageService } from 'primeng/api';
+import { routes } from './app.routes';
+import { CrudService } from './core/services/crud.service';
+import { NotificationService } from './core/services/notification.service';
+import { FileUploadService } from './core/services/file-upload.service';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(withInterceptorsFromDi()),
+    MessageService,
+    CrudService,
+    NotificationService,
+    FileUploadService,
+  ],
+};

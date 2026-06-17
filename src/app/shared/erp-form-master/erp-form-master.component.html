@@ -1,0 +1,105 @@
+<form class="erp-form-card" [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+  <div class="erp-form-header">
+    <div class="form-title-wrap">
+      <button type="button" class="back-link" (click)="back.emit()">
+        <i class="pi pi-arrow-left"></i>
+        {{ backLabel }}
+      </button>
+      <div class="title-row">
+        <div class="title-icon"><i class="pi pi-building"></i></div>
+        <div>
+          <h2>{{ title }}</h2>
+          <p *ngIf="subtitle">{{ subtitle }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="erp-form-actions" *ngIf="showActions">
+      <button type="button" class="btn secondary" (click)="resetForm.emit()">
+        <i class="pi pi-refresh"></i>
+        Reset
+      </button>
+      <button type="submit" class="btn primary" [disabled]="saving">
+        <i class="pi" [class.pi-save]="!saving" [class.pi-spin]="saving" [class.pi-spinner]="saving"></i>
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="erp-form-body">
+    <section class="erp-form-section" *ngFor="let section of sections; trackBy: trackSection">
+      <div class="section-title">
+        <span class="section-icon"><i [class]="section.icon || 'pi pi-info-circle'"></i></span>
+        <div>
+          <h3>{{ section.title }}</h3>
+          <p *ngIf="section.description">{{ section.description }}</p>
+        </div>
+      </div>
+
+      <div class="field-grid" [style.grid-template-columns]="getColumnStyle(section.columns || 2)">
+        <div class="field" *ngFor="let field of section.fields; trackBy: trackField" [class.checkbox-field]="field.type === 'checkbox'" [class.hidden-field]="field.type === 'hidden'" [style.grid-column]="'span ' + (field.colSpan || 1)">
+          <ng-container *ngIf="field.type === 'checkbox'; else nonCheckboxField">
+            <label class="switch-line" [for]="field.key">
+              <input type="checkbox" [id]="field.key" [formControlName]="field.key" />
+              <span class="switch-ui"></span>
+              <span class="switch-copy">
+                <strong>{{ field.label }}</strong>
+                <small>{{ field.hint || 'Enable this record for active use.' }}</small>
+              </span>
+            </label>
+          </ng-container>
+
+          <ng-template #nonCheckboxField>
+            <ng-container *ngIf="field.type !== 'hidden'">
+              <label [for]="field.key">
+                {{ field.label }}
+                <span *ngIf="field.required" class="required">*</span>
+              </label>
+
+              <ng-container [ngSwitch]="field.type || 'text'">
+                <textarea *ngSwitchCase="'textarea'" [id]="field.key" [formControlName]="field.key" [placeholder]="field.placeholder || ''" [readonly]="field.readOnly"></textarea>
+
+                <select *ngSwitchCase="'select'" [id]="field.key" [formControlName]="field.key">
+                  <option [ngValue]="null">Select {{ field.label }}</option>
+                  <option *ngFor="let option of field.options || []" [ngValue]="option.value">{{ option.label }}</option>
+                </select>
+
+              <p-select
+                *ngSwitchCase="'searchSelect'"
+                [inputId]="field.key"
+                [formControlName]="field.key"
+                [options]="field.options || []"
+                optionLabel="label"
+                optionValue="value"
+                [filter]="true"
+                filterBy="label"
+                [showClear]="true"
+                appendTo="body"
+                styleClass="erp-control erp-search-select"
+                [placeholder]="'Search / Select ' + field.label">
+            </p-select>
+
+                <div *ngSwitchCase="'file'" class="file-upload-box">
+                  <input class="file-native" type="file" [id]="field.key" [accept]="field.accept || ''" (change)="onFileChange($event, field)" />
+                  <label class="file-drop" [for]="field.key">
+                    <span class="file-icon"><i class="pi pi-upload"></i></span>
+                    <span>
+                      <strong>{{ fileNames[field.key] || formGroup.get(field.key)?.value || 'Choose file' }}</strong>
+                      <small>{{ field.hint || 'Upload JPG, PNG or PDF file.' }}</small>
+                    </span>
+                  </label>
+                  <img *ngIf="imagePreviews[field.key]" class="file-preview" [src]="imagePreviews[field.key]" alt="Preview" />
+                </div>
+
+                <input *ngSwitchDefault [type]="field.type || 'text'" [id]="field.key" [formControlName]="field.key" [placeholder]="field.placeholder || ''" [readonly]="field.readOnly" [attr.min]="field.min" [attr.max]="field.max" [attr.step]="field.step" />
+              </ng-container>
+
+              <small class="hint" *ngIf="field.hint && field.type !== 'file'">{{ field.hint }}</small>
+              <small class="error" *ngIf="isInvalid(field.key)">{{ field.label }} is required</small>
+            </ng-container>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+  </div>
+</form>

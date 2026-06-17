@@ -1,0 +1,154 @@
+.erp-form-card {
+  background: #fff;
+  border: 1px solid #e1e9e5;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+  overflow: visible;
+}
+
+
+.erp-form-header {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #e7efeb;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(8px);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .055);
+}
+
+.form-title-wrap { display: grid; gap: 6px; min-width: 0; }
+.back-link {
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.back-link:hover { color: #065f46; text-decoration: underline; }
+.title-row { display: flex; align-items: center; gap: 9px; }
+.title-icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #047857; background: #f0faf5; border: 1px solid #dceee6; }
+.title-icon i { font-size: 14px; }
+
+h2 { margin: 0; color: #10251f; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+p { margin: 1px 0 0; color: #667085; font-size: 12px; }
+
+.erp-form-actions { display: flex; gap: 8px; align-items: center; }
+.btn {
+  min-height: 32px;
+  border-radius: 7px;
+  border: 1px solid #d7e1dc;
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+:host ::ng-deep .erp-control {
+  width: 100%;
+  max-width: 100%;
+}
+
+:host ::ng-deep .erp-search-select {
+  width: 100%;
+}
+
+:host ::ng-deep .erp-search-select .p-select-label {
+  width: 100%;
+}
+.btn:hover { background: #f7faf9; border-color: #bfd2c9; }
+.btn.primary { background: #047857; color: #fff; border-color: #047857; }
+.btn.primary:hover { background: #066b50; border-color: #066b50; }
+.btn.primary:disabled { opacity: .65; cursor: not-allowed; }
+.btn.secondary { background: #fff; color: #1f2937; }
+.btn i { font-size: 12px; }
+
+.erp-form-body { padding: 10px; display: grid; gap: 10px; background: #f7faf8; }
+.erp-form-section { border: 1px solid #e3ece7; border-radius: 9px; padding: 11px; background: #fff; }
+.section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eef3f1; }
+.section-icon { width: 25px; height: 25px; border-radius: 7px; display: grid; place-items: center; color: #047857; background: #f0faf5; border: 1px solid #dceee6; }
+.section-icon i { font-size: 12px; }
+h3 { margin: 0; color: #184238; font-size: 13px; font-weight: 700; }
+.section-title p { font-size: 11px; margin-top: 0; }
+
+.field-grid { display: grid; gap: 8px 12px; align-items: start; }
+.field label:not(.switch-line) { display: block; font-size: 11px; font-weight: 600; color: #344054; margin-bottom: 4px; }
+.required { color: #ef4444; }
+input:not([type='checkbox']), select, textarea {
+  width: 100%;
+  border: 1px solid #d5ddd9;
+  border-radius: 7px;
+  min-height: 33px;
+  padding: 6px 9px;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  color: #111827;
+  background: #fff;
+  transition: border-color .14s ease, box-shadow .14s ease, background .14s ease;
+}
+textarea { min-height: 58px; resize: vertical; line-height: 1.35; }
+input:focus, select:focus, textarea:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,.10); }
+input[readonly], textarea[readonly] { background: #f8fafc; color: #64748b; }
+.hint { color: #667085; display: block; margin-top: 3px; font-size: 10px; }
+.error { color: #dc2626; display: block; margin-top: 3px; font-weight: 600; font-size: 10px; }
+
+.checkbox-field { align-self: center; }
+.switch-line { display: flex; align-items: center; gap: 8px; min-height: 34px; cursor: pointer; }
+.switch-line input { display: none; }
+.switch-ui { width: 34px; height: 19px; border-radius: 999px; background: #cbd5e1; position: relative; transition: background .18s ease; flex: 0 0 auto; }
+.switch-ui::after { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.22); transition: transform .18s ease; }
+.switch-line input:checked + .switch-ui { background: #059669; }
+.switch-line input:checked + .switch-ui::after { transform: translateX(15px); }
+.switch-copy { display: grid; gap: 0; }
+.switch-copy strong { font-size: 11px; color: #1f2937; font-weight: 600; }
+.switch-copy small { font-size: 10px; color: #667085; }
+
+@media (max-width: 900px) {
+  .field-grid { grid-template-columns: 1fr !important; }
+  .field { grid-column: span 1 !important; }
+  .erp-form-header { flex-direction: column; align-items: stretch; }
+  .erp-form-actions { justify-content: flex-end; }
+}
+.hidden-field { display: none; }
+.file-upload-box { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.file-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-drop {
+  min-height: 38px;
+  border: 1px dashed #bdd7cb;
+  border-radius: 8px;
+  background: #f8fcfa;
+  padding: 6px 9px;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0 !important;
+  transition: border-color .14s ease, background .14s ease, box-shadow .14s ease;
+}
+.file-drop:hover { border-color: #059669; background: #f1fbf6; box-shadow: 0 0 0 2px rgba(5,150,105,.08); }
+.file-icon { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: #047857; background: #eaf8f1; border: 1px solid #d5efe2; flex: 0 0 auto; }
+.file-drop strong { display: block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #1f2937; font-weight: 600; }
+.file-drop small { display: block; margin-top: 1px; font-size: 10px; color: #667085; font-weight: 500; }
+.file-preview { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; border: 1px solid #dbe8e1; background: #fff; }
+@media (max-width: 900px) { .file-upload-box { grid-template-columns: 1fr; } .file-preview { width: 64px; height: 64px; } }
+
+
+/* Final layout safety */
+.erp-form-card { margin-bottom: 0; }

@@ -1,0 +1,13 @@
+.erp-footer {
+  min-height: 46px;
+  padding: 0 18px;
+  border-top: 1px solid #dff7ed;
+  background: #fff;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+@media (max-width: 720px) { .erp-footer { height: auto; align-items: flex-start; flex-direction: column; padding: 12px 16px; } }

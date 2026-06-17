@@ -1,0 +1,158 @@
+<section class="erp-dashboard" [class.module-mode]="mode !== 'workspace'">
+  @if (mode === 'not-found') {
+    <section class="module-hero compact page-hero not-found-page">
+      <span class="eyebrow">ERP Navigation</span>
+      <h1>Page Not Found</h1>
+      <p>The requested page is not available, inactive, or not assigned to your menu permission.</p>
+      <div class="context-line">
+        <a routerLink="/erp/workspace" class="quick-card">Back to Dashboard</a>
+      </div>
+    </section>
+  } @else if (mode === 'workspace') {
+    <div class="stats-grid landing-first">
+      @for (item of stats; track item.label) {
+        <article class="stat-card" [class.warn]="item.tone === 'amber'">
+          <div class="stat-icon"><i [class]="item.icon"></i></div>
+          <div>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>{{ item.note }}</small>
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="workspace-grid">
+      <section class="panel production-panel">
+        <div class="panel-head">
+          <h3>Production This Week</h3>
+          <span>Daily output (pcs)</span>
+        </div>
+        <div class="bar-list">
+          @for (row of productionRows; track row.day) {
+            <div class="bar-row" [class.warning]="row.warning">
+              <span>{{ row.day }}</span>
+              <div><b [style.width.%]="row.width"></b></div>
+              <em>{{ row.value }}</em>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="panel activity-panel">
+        <div class="panel-head">
+          <h3>Recent Activity</h3>
+          <span>Live</span>
+        </div>
+        <div class="activity-list">
+          @for (activity of activities; track activity.title) {
+            <div class="activity" [class]="activity.tone">
+              <span class="activity-dot"></span>
+              <div>
+                <strong>{{ activity.title }}</strong>
+                <small>{{ activity.meta }}</small>
+              </div>
+              <em>{{ activity.time }}</em>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <section class="quick-panel">
+      <h3>Quick Access — All Modules</h3>
+      <div class="quick-grid">
+        @for (module of modules; track module.key) {
+          <a [routerLink]="module.route" class="quick-item">
+            <i [class]="module.icon || 'pi pi-folder'"></i>
+            <span>{{ module.title }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  } @else if (mode === 'module') {
+    <section class="module-hero compact">
+      <span class="eyebrow">Module Dashboard</span>
+      <h1>{{ pageTitle }}</h1>
+      <p>{{ pageSubtitle }}</p>
+      <div class="context-line">
+        <span><i class="pi pi-building"></i> {{ companyName }}</span>
+        <span><i class="pi pi-map-marker"></i> {{ areaName }}</span>
+        <span><i class="pi pi-user"></i> {{ userName }}</span>
+      </div>
+    </section>
+
+    <section class="module-menu-panel">
+      <div class="panel-head">
+        <h3>{{ activeModule?.title }} Menus</h3>
+        <span>API ready navigation</span>
+      </div>
+      <div class="module-menu-grid">
+        @for (menu of menuCards; track menu.id) {
+          <a [routerLink]="menu.route || activeModule?.route" class="module-menu-card">
+            <div class="menu-icon"><i [class]="menu.icon || 'pi pi-folder'"></i></div>
+            <div>
+              <strong>{{ menu.title }}</strong>
+              <small>{{ menu.subMenus.length ? menu.subMenus.length + ' submenu' : 'Direct menu' }}</small>
+            </div>
+            <i class="pi pi-angle-right arrow"></i>
+          </a>
+        }
+      </div>
+    </section>
+
+    <section class="panel summary-panel">
+      <div class="panel-head">
+        <h3>{{ activeModule?.title }} Summary</h3>
+        <span>Theme demo only</span>
+      </div>
+      <div class="summary-grid">
+        @for (item of summary; track item.label) {
+          <div class="summary-item">
+            <i [class]="item.icon"></i>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <small>This Month</small>
+          </div>
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="module-hero compact page-hero">
+      <span class="eyebrow">{{ mode === 'submenu' ? 'Submenu Workspace' : 'Menu Workspace' }}</span>
+      <h1>{{ pageTitle }}</h1>
+      <p>{{ pageSubtitle }}</p>
+      <div class="context-line">
+        <span><i class="pi pi-sitemap"></i> {{ activeModule?.title }}</span>
+        @if (activeMenu) { <span><i class="pi pi-list"></i> {{ activeMenu.title }}</span> }
+      </div>
+    </section>
+
+    @if (mode === 'menu' && submenuCards.length) {
+      <section class="module-menu-panel">
+        <div class="panel-head">
+          <h3>{{ activeMenu?.title }} Submenus</h3>
+          <span>No CRUD page yet</span>
+        </div>
+        <div class="module-menu-grid">
+          @for (sub of submenuCards; track sub.id) {
+            <a [routerLink]="sub.route" class="module-menu-card">
+              <div class="menu-icon"><i [class]="sub.icon || 'pi pi-circle'"></i></div>
+              <div>
+                <strong>{{ sub.title }}</strong>
+                <small>Open submenu workspace</small>
+              </div>
+              <i class="pi pi-angle-right arrow"></i>
+            </a>
+          }
+        </div>
+      </section>
+    } @else {
+      <section class="empty-state panel">
+        <div class="empty-icon"><i class="pi pi-sparkles"></i></div>
+        <h3>{{ pageTitle }} Theme Shell</h3>
+        <p>This is layout/navigation only. CRUD, forms, reports and business logic will be added later.</p>
+      </section>
+    }
+  }
+</section>

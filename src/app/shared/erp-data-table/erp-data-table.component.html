@@ -1,0 +1,67 @@
+<div class="table-card">
+  <div class="table-toolbar">
+    <div class="table-title">
+      <span class="table-icon"><i class="pi pi-table"></i></span>
+      <div>
+        <h3>{{ title }}</h3>
+        <p>{{ totalEntries }} record{{ totalEntries === 1 ? '' : 's' }} found</p>
+      </div>
+    </div>
+    <div class="toolbar-actions">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input [placeholder]="searchPlaceholder" [ngModel]="searchText" (ngModelChange)="onSearch($event)" />
+      </div>
+      <button *ngIf="showRefresh" class="btn secondary" (click)="refresh.emit()"><i class="pi pi-refresh"></i> Refresh</button>
+      <button *ngIf="showExport" class="btn success" (click)="exportCsv()"><i class="pi pi-download"></i> Export</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="serial-col">#</th>
+          <th *ngFor="let col of columns" [style.width]="col.width" (click)="sort(col)" [class.sortable]="col.sortable">
+            <span>{{ col.header }}</span>
+            <i *ngIf="col.sortable && sortKey !== col.key" class="pi pi-sort-alt sort-muted"></i>
+            <i *ngIf="sortKey === col.key && sortDirection === 'asc'" class="pi pi-sort-up"></i>
+            <i *ngIf="sortKey === col.key && sortDirection === 'desc'" class="pi pi-sort-down"></i>
+          </th>
+          <th *ngIf="actions.length" class="actions-head">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading"><td class="state-cell" [attr.colspan]="columns.length + 2"><i class="pi pi-spinner pi-spin"></i> Loading data...</td></tr>
+        <tr *ngFor="let row of pagedData; let i = index">
+          <td class="serial-col">{{ (page - 1) * pageSize + i + 1 }}</td>
+          <td *ngFor="let col of columns">
+            <span *ngIf="col.type === 'status'; else normalCell" class="status" [class.inactive]="!isActiveStatus(getCellValue(row, col))">
+              <span class="status-dot"></span>{{ formatValue(getCellValue(row, col), col.type) }}
+            </span>
+            <ng-template #normalCell>{{ formatValue(getCellValue(row, col), col.type) }}</ng-template>
+          </td>
+          <td *ngIf="actions.length" class="action-cell">
+            <button *ngFor="let action of actions" class="icon-btn" [class.danger]="action.danger" (click)="runAction(action, row)" [title]="action.label">
+              <i *ngIf="action.icon?.startsWith('pi '); else textIcon" [class]="action.icon"></i>
+              <ng-template #textIcon>{{ action.icon || action.label }}</ng-template>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="!loading && !pagedData.length"><td class="state-cell" [attr.colspan]="columns.length + 2"><i class="pi pi-inbox"></i> No data found</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-footer">
+    <span>Showing <strong>{{ fromEntry }}</strong> to <strong>{{ toEntry }}</strong> of <strong>{{ totalEntries }}</strong> entries</span>
+    <div class="pagination">
+      <select [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }} / page</option>
+      </select>
+      <button class="pager-btn" [disabled]="page === 1 || loading" (click)="goToPage(page - 1)"><i class="pi pi-angle-left"></i></button>
+      <span class="page-indicator">{{ page }}</span>
+      <button class="pager-btn" [disabled]="page === totalPages || loading" (click)="goToPage(page + 1)"><i class="pi pi-angle-right"></i></button>
+    </div>
+  </div>
+</div>

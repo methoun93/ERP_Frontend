@@ -1,0 +1,51 @@
+<div class="module-page">
+  <header class="module-topbar">
+    <div class="brand-area">
+      <div class="brand-mark">ERP</div>
+      <div>
+        <h1>ERP Modules</h1>
+        <p>{{ context?.companyName || 'Company' }} · {{ context?.areaName || 'Area' }}</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button type="button" class="ghost-button" (click)="changeCompany()">
+        <i class="pi pi-building"></i>
+        Change Company
+      </button>
+      <button type="button" class="profile-button" (click)="logout()">
+        <span>{{ user?.username || 'User' }}</span>
+        <i class="pi pi-sign-out"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="module-content">
+    <section class="hero-card">
+      <div>
+        <span class="eyebrow">Module Landing</span>
+        <h2>Select a module to continue</h2>
+        <p>After selecting a module, the ERP workspace will open with that module's menu and submenu in the sidebar.</p>
+      </div>
+      <div class="hero-icon"><i class="pi pi-th-large"></i></div>
+    </section>
+
+    <section class="module-grid">
+      <a
+        *ngFor="let module of modules"
+        class="module-card"
+        [routerLink]="module.route"
+        (click)="selectModule(module.key)"
+      >
+        <div class="module-icon" [style.background]="module.color">
+          <i [class]="module.icon"></i>
+        </div>
+        <div class="module-info">
+          <h3>{{ module.title }}</h3>
+          <p>{{ module.subtitle }}</p>
+        </div>
+        <i class="pi pi-arrow-right module-arrow"></i>
+      </a>
+    </section>
+  </main>
+</div>

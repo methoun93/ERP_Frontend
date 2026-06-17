@@ -1,0 +1,20 @@
+<div class="workspace-card">
+  <div class="workspace-header">
+    <div>
+      <span class="module-pill">{{ module?.title || 'ERP Module' }}</span>
+      <h2>{{ module?.title || 'Workspace' }}</h2>
+      <p>{{ module?.subtitle || 'Select a menu from the sidebar to continue.' }}</p>
+    </div>
+    <a routerLink="/modules" class="change-module">Change Module</a>
+  </div>
+
+  <div class="menu-preview">
+    <div class="menu-preview-card" *ngFor="let menu of menus">
+      <div class="preview-icon"><i [class]="menu.icon || 'pi pi-folder'"></i></div>
+      <div>
+        <h3>{{ menu.title }}</h3>
+        <p>{{ menu.children?.length || 0 }} submenu items</p>
+      </div>
+    </div>
+  </div>
+</div>
