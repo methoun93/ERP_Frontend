@@ -27,7 +27,7 @@
   </div>
 
   <div class="erp-form-body">
-    <section class="erp-form-section" *ngFor="let section of sections; trackBy: trackSection">
+    <section class="erp-form-section" *ngFor="let section of sections; trackBy: trackSection" [ngClass]="section.layoutClass || ''" [style.grid-column]="'span ' + (section.colSpan || 2)">
       <div class="section-title">
         <span class="section-icon"><i [class]="section.icon || 'pi pi-info-circle'"></i></span>
         <div>
@@ -78,6 +78,24 @@
                 styleClass="erp-control erp-search-select"
                 [placeholder]="'Search / Select ' + field.label">
             </p-select>
+
+              <p-multiSelect
+                *ngSwitchCase="'multiSelect'"
+                [inputId]="field.key"
+                [formControlName]="field.key"
+                [options]="field.options || []"
+                optionLabel="label"
+                optionValue="value"
+                [filter]="true"
+                filterBy="label"
+                [showClear]="true"
+                display="chip"
+                [maxSelectedLabels]="3"
+                selectedItemsLabel="{0} selected"
+                appendTo="body"
+                styleClass="erp-control erp-search-select erp-multi-select"
+                [placeholder]="'Search / Select ' + field.label">
+              </p-multiSelect>
 
                 <div *ngSwitchCase="'file'" class="file-upload-box">
                   <input class="file-native" type="file" [id]="field.key" [accept]="field.accept || ''" (change)="onFileChange($event, field)" />

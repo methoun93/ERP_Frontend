@@ -30,10 +30,12 @@
       </div>
     </div>
 
-
     <div class="user-dropdown">
       <button type="button" class="user-btn" (click)="userMenuOpen = !userMenuOpen; moduleMenuOpen = false">
-        <span class="avatar">{{ avatarText }}</span>
+        <span class="avatar" [class.has-image]="avatarUrl">
+          <img *ngIf="avatarUrl" [src]="avatarUrl" alt="User" />
+          <ng-container *ngIf="!avatarUrl">{{ avatarText }}</ng-container>
+        </span>
         <span class="user-meta">
           <strong>{{ displayName }}</strong>
           <small>{{ companyName }} <em>({{ areaName }})</em></small>
@@ -43,18 +45,127 @@
 
       <div class="dropdown-card user-menu" *ngIf="userMenuOpen">
         <div class="user-card-head">
-          <span class="avatar large">{{ avatarText }}</span>
+          <span class="avatar large" [class.has-image]="avatarUrl">
+            <img *ngIf="avatarUrl" [src]="avatarUrl" alt="User" />
+            <ng-container *ngIf="!avatarUrl">{{ avatarText }}</ng-container>
+          </span>
           <div class="user-card-copy">
             <strong>{{ displayName }}</strong>
             <small>{{ roleName }}</small>
+            <div class="company-line">{{ companyName }} <em>({{ areaName }})</em></div>
           </div>
         </div>
 
-        <button type="button" (click)="switchCompany()"><i class="pi pi-building"></i> Switch Company</button>
-        <button type="button"><i class="pi pi-user"></i> My Profile</button>
-        <button type="button"><i class="pi pi-key"></i> Change Password</button>
+        <button type="button" (click)="openSwitchCompany()"><i class="pi pi-building"></i> Switch Company</button>
+        <button type="button" (click)="openProfile()"><i class="pi pi-user"></i> My Profile</button>
+        <button type="button" (click)="openChangePassword()"><i class="pi pi-key"></i> Change Password</button>
         <button type="button" class="danger" (click)="logout()"><i class="pi pi-sign-out"></i> Sign Out</button>
       </div>
     </div>
   </div>
 </header>
+
+<div class="modal-backdrop" *ngIf="switchModalOpen || profileModalOpen || passwordModalOpen" (click)="switchModalOpen = false; profileModalOpen = false; passwordModalOpen = false"></div>
+
+<section class="erp-modal" *ngIf="switchModalOpen" (click)="$event.stopPropagation()">
+  <div class="modal-head">
+    <div>
+      <h2>Switch Company</h2>
+      <p>Select your working company and area.</p>
+    </div>
+    <button type="button" class="modal-close" (click)="switchModalOpen = false"><i class="pi pi-times"></i></button>
+  </div>
+
+  <div class="modal-body">
+    <label>Company</label>
+    <select [(ngModel)]="selectedCompanyId" (change)="loadAreasForSwitch(false)" [disabled]="loadingCompanies">
+      <option value="">Select Company</option>
+      <option *ngFor="let company of companies" [value]="company.companyId">
+        {{ company.companyName }} <ng-container *ngIf="company.shortName">({{ company.shortName }})</ng-container>
+      </option>
+    </select>
+
+    <label>Area</label>
+    <select [(ngModel)]="selectedAreaId" [disabled]="!selectedCompanyId || loadingAreas">
+      <option value="">{{ loadingAreas ? 'Loading areas...' : 'Select Area' }}</option>
+      <option *ngFor="let area of areas" [value]="area.areaId">
+        {{ area.areaName }} <ng-container *ngIf="area.shortName">({{ area.shortName }})</ng-container>
+      </option>
+    </select>
+
+    <div class="selected-context-preview" *ngIf="selectedCompanyId && selectedAreaId">
+      <i class="pi pi-check-circle"></i>
+      <span>Selected workspace will be used for menus, permissions and CurrentUser AreaId.</span>
+    </div>
+  </div>
+
+  <div class="modal-actions">
+    <button type="button" class="btn-light" (click)="switchModalOpen = false">Cancel</button>
+    <button type="button" class="btn-primary" (click)="saveContextSwitch()" [disabled]="switchingContext || loadingAreas">
+      {{ switchingContext ? 'Switching...' : 'Switch Company' }}
+    </button>
+  </div>
+</section>
+
+<section class="erp-modal profile-modal" *ngIf="profileModalOpen" (click)="$event.stopPropagation()">
+  <div class="modal-head">
+    <div>
+      <h2>My Profile</h2>
+      <p>Current login and workspace information.</p>
+    </div>
+    <button type="button" class="modal-close" (click)="profileModalOpen = false"><i class="pi pi-times"></i></button>
+  </div>
+
+  <div class="profile-card">
+    <span class="profile-photo" [class.has-image]="avatarUrl">
+      <img *ngIf="avatarUrl" [src]="avatarUrl" alt="User profile" />
+      <ng-container *ngIf="!avatarUrl">No Image</ng-container>
+    </span>
+    <div>
+      <h3>{{ displayName }}</h3>
+      <p>{{ roleName }}</p>
+      <small>{{ user?.email || '-' }}</small>
+    </div>
+  </div>
+
+  <div class="profile-grid">
+    <div><span>Company</span><strong>{{ companyName }}</strong></div>
+    <div><span>Area</span><strong>{{ areaName }}</strong></div>
+    <div><span>User ID</span><strong>{{ user?.id || user?.userId || '-' }}</strong></div>
+    <div><span>Username</span><strong>{{ user?.username || '-' }}</strong></div>
+  </div>
+
+  <div class="signature-preview">
+    <span>Signature</span>
+    <img *ngIf="signatureUrl" [src]="signatureUrl" alt="Signature" />
+    <strong *ngIf="!signatureUrl">No signature uploaded</strong>
+  </div>
+</section>
+
+<section class="erp-modal" *ngIf="passwordModalOpen" (click)="$event.stopPropagation()">
+  <div class="modal-head">
+    <div>
+      <h2>Change Password</h2>
+      <p>Update your login password.</p>
+    </div>
+    <button type="button" class="modal-close" (click)="passwordModalOpen = false"><i class="pi pi-times"></i></button>
+  </div>
+
+  <div class="modal-body">
+    <label>Current Password</label>
+    <input type="password" [(ngModel)]="passwordModel.currentPassword" placeholder="Enter current password" />
+
+    <label>New Password</label>
+    <input type="password" [(ngModel)]="passwordModel.newPassword" placeholder="Enter new password" />
+
+    <label>Confirm Password</label>
+    <input type="password" [(ngModel)]="passwordModel.confirmPassword" placeholder="Confirm new password" />
+  </div>
+
+  <div class="modal-actions">
+    <button type="button" class="btn-light" (click)="passwordModalOpen = false">Cancel</button>
+    <button type="button" class="btn-primary" (click)="changePassword()" [disabled]="changingPassword">
+      {{ changingPassword ? 'Changing...' : 'Change Password' }}
+    </button>
+  </div>
+</section>

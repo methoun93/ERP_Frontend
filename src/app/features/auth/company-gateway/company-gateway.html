@@ -44,7 +44,7 @@
       <div *ngIf="loading" class="info-box">Loading companies...</div>
 
       <label>Company</label>
-      <select [(ngModel)]="companyId" name="companyId" (change)="loadAreas()">
+      <select [(ngModel)]="companyId" name="companyId" (change)="loadAreas(false)">
         <option value="">Select company</option>
         <option *ngFor="let company of companies" [value]="company.companyId">
           {{ company.companyName }} <ng-container *ngIf="company.shortName">({{ company.shortName }})</ng-container>

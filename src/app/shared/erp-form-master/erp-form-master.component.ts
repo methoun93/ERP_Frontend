@@ -3,10 +3,11 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ErpFormField, ErpFormSection } from './erp-form-master.types';
 import { SelectModule } from 'primeng/select';
+import { MultiSelectModule } from 'primeng/multiselect';
 @Component({
   selector: 'app-erp-form-master',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SelectModule],
+  imports: [CommonModule, ReactiveFormsModule, SelectModule, MultiSelectModule],
   templateUrl: './erp-form-master.component.html',
   styleUrls: ['./erp-form-master.component.scss']
 })

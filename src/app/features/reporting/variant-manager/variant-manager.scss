@@ -1,0 +1,9 @@
+.variant-page { padding: 20px; color: #0f172a; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+h2 { margin: 0; } p { margin: 4px 0 0; color: #64748b; }
+a { color: #0f3b66; text-decoration: none; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; }
+th { background: #0f3b66; color: #fff; }
+th, td { padding: 10px 12px; border: 1px solid #e2e8f0; text-align: left; }
+.alert { padding: 12px 14px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; }
+.alert.error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }

@@ -9,7 +9,7 @@
 </ng-container>
 
 <ng-template #loadedPage>
-  <app-crud-master *ngIf="pageConfig; else genericPage" [config]="pageConfig"></app-crud-master>
+  <app-crud-master *ngIf="pageConfig; else genericPage" [config]="pageConfig" [attr.data-page-key]="pageConfigKey"></app-crud-master>
 </ng-template>
 
 <ng-template #genericPage>

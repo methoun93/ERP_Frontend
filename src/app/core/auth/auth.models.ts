@@ -17,6 +17,10 @@ export interface LoginResponse {
   email?: string;
   empId?: string | null;
   role?: string | null;
+  roleName?: string | null;
+  primaryRoleName?: string | null;
+  profileImageUrl?: string | null;
+  signatureImageUrl?: string | null;
   areaId?: string | null;
   isActive?: boolean;
 
@@ -27,6 +31,10 @@ export interface LoginResponse {
     fullName?: string;
     email?: string;
     role?: string | null;
+    roleName?: string | null;
+    primaryRoleName?: string | null;
+    profileImageUrl?: string | null;
+    signatureImageUrl?: string | null;
     areaId?: string | null;
   };
 }
@@ -73,6 +81,10 @@ export interface ErpUserInfo {
   fullName?: string;
   email?: string;
   role?: string | null;
+  roleName?: string | null;
+  primaryRoleName?: string | null;
+  profileImageUrl?: string | null;
+  signatureImageUrl?: string | null;
   avatarUrl?: string;
   companyName?: string;
   companyId?: string;

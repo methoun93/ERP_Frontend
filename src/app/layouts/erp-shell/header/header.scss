@@ -429,3 +429,255 @@
 .dropdown-card { z-index: 1200; }
 .user-menu { right: 0; top: calc(100% + 7px); max-height: calc(100vh - 70px); overflow-y: auto; }
 @media (max-width: 760px) { .user-menu, .module-menu { right: 0; width: min(280px, calc(100vw - 18px)); } }
+
+/* Profile image support */
+.avatar.has-image {
+  overflow: hidden;
+  background: #fff;
+  padding: 0;
+}
+.avatar.has-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Header modal system */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .38);
+  backdrop-filter: blur(2px);
+  z-index: 1400;
+}
+
+.erp-modal {
+  position: fixed;
+  top: 76px;
+  right: 28px;
+  width: min(430px, calc(100vw - 32px));
+  max-height: calc(100vh - 105px);
+  overflow: auto;
+  border: 1px solid #bbf7d0;
+  border-radius: 18px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 24px 80px rgba(6, 78, 59, .24);
+  z-index: 1500;
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-head h2 {
+  margin: 0;
+  color: #064e3b;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.modal-head p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1fae5;
+  border-radius: 10px;
+  background: #f8fffb;
+  color: #047857;
+  cursor: pointer;
+}
+
+.modal-body {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.modal-body label {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.modal-body select,
+.modal-body input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  padding: 0 12px;
+  outline: none;
+}
+
+.modal-body select:focus,
+.modal-body input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+}
+
+.selected-context-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-light,
+.btn-primary {
+  height: 38px;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.btn-light {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #334155;
+}
+
+.btn-primary {
+  border: 1px solid #059669;
+  background: #059669;
+  color: #fff;
+}
+
+.btn-primary:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+.profile-modal { width: min(500px, calc(100vw - 32px)); }
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+.profile-photo {
+  width: 86px;
+  height: 86px;
+  flex: 0 0 auto;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #bbf7d0;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-card h3 {
+  margin: 0;
+  color: #064e3b;
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.profile-card p {
+  margin: 3px 0;
+  color: #047857;
+  font-weight: 900;
+}
+
+.profile-card small { color: #64748b; }
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 18px 16px;
+}
+
+.profile-grid div,
+.signature-preview {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.profile-grid span,
+.signature-preview span {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.profile-grid strong,
+.signature-preview strong {
+  display: block;
+  margin-top: 3px;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.signature-preview {
+  margin: 0 18px 18px;
+}
+
+.signature-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 100px;
+  margin-top: 8px;
+  object-fit: contain;
+  border: 1px dashed #bbf7d0;
+  border-radius: 10px;
+  background: #fbfffd;
+}
+
+@media (max-width: 760px) {
+  .erp-modal {
+    top: 60px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+  .profile-grid { grid-template-columns: 1fr; }
+}

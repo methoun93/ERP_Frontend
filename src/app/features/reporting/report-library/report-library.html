@@ -1,0 +1,55 @@
+<section class="report-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Reporting</p>
+      <h1>Report Library</h1>
+      <p class="subtitle">Manage module-wise printable reports, report variants and templates.</p>
+    </div>
+    <button class="primary-btn" type="button" (click)="openBuilder()">+ New Report</button>
+  </div>
+
+  <div class="toolbar-card">
+    <input type="search" [(ngModel)]="searchText" placeholder="Search report no, name, key or SP..." />
+    <select [(ngModel)]="moduleFilter">
+      <option *ngFor="let module of modules" [value]="module">{{ module }}</option>
+    </select>
+    <button type="button" (click)="loadReports()">Refresh</button>
+  </div>
+
+  <div *ngIf="error" class="alert">{{ error }} Demo data is shown until backend endpoint is available.</div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Report No</th>
+          <th>Report Name</th>
+          <th>Module</th>
+          <th>Report Key</th>
+          <th>SP Name</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th class="text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let report of filteredReports">
+          <td class="strong">{{ report.reportNo || '-' }}</td>
+          <td>{{ report.reportName }}</td>
+          <td>{{ report.moduleName || 'General' }}</td>
+          <td><span class="code">{{ report.reportKey }}</span></td>
+          <td><span class="code">{{ report.procedureName }}</span></td>
+          <td><span class="badge">{{ report.reportType }}</span></td>
+          <td><span class="status" [class.off]="report.isActive === false">{{ report.isActive === false ? 'Inactive' : 'Active' }}</span></td>
+          <td class="text-right">
+            <button type="button" class="link-btn" (click)="openPreview(report)">Preview</button>
+            <button type="button" class="link-btn" (click)="openBuilder(report)">Design</button>
+          </td>
+        </tr>
+        <tr *ngIf="!filteredReports.length && !loading">
+          <td colspan="8" class="empty">No reports found. Create report master data in Rpt_Reports first.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

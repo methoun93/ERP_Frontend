@@ -1,0 +1,23 @@
+.report-page { padding: 24px 28px; color: #0f2345; }
+.page-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+.eyebrow { margin: 0 0 4px; color: #059669; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+h1 { margin: 0; font-size: 28px; color: #001846; }
+.subtitle { margin: 6px 0 0; color: #49617f; }
+.primary-btn { background: #063b75; color: #fff; border: 0; border-radius: 10px; padding: 11px 18px; font-weight: 700; cursor: pointer; }
+.toolbar-card, .table-card { background: #fff; border: 1px solid #cfeee3; border-radius: 14px; box-shadow: 0 6px 18px rgba(15, 35, 69, .05); }
+.toolbar-card { display: grid; grid-template-columns: 1fr 220px auto; gap: 12px; padding: 14px; margin-bottom: 14px; }
+input, select { border: 1px solid #d7e1ef; border-radius: 9px; padding: 10px 12px; font: inherit; outline: none; }
+.toolbar-card button, .link-btn { border: 1px solid #d7e1ef; background: #f8fbff; border-radius: 9px; padding: 9px 12px; cursor: pointer; }
+.alert { border: 1px solid #fecaca; background: #fff1f2; color: #b91c1c; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #f7fbff; color: #415777; font-size: 12px; text-align: left; padding: 12px; border-bottom: 1px solid #e5edf7; }
+td { padding: 13px 12px; border-bottom: 1px solid #edf2f7; color: #233a59; }
+.strong { font-weight: 800; color: #0f2345; }
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; background: #eef6ff; padding: 4px 7px; border-radius: 6px; }
+.badge { background: #ecfdf5; color: #047857; border-radius: 999px; padding: 4px 8px; font-weight: 700; font-size: 12px; }
+.status { color: #059669; font-weight: 800; }
+.status.off { color: #dc2626; }
+.text-right { text-align: right; }
+.empty { padding: 28px; text-align: center; color: #64748b; }
+.link-btn { margin-left: 8px; color: #063b75; font-weight: 700; }
+@media (max-width: 900px) { .toolbar-card { grid-template-columns: 1fr; } .table-card { overflow-x: auto; } }

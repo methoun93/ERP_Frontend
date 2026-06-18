@@ -1,0 +1,65 @@
+<section class="report-viewer-shell">
+  <div class="viewer-controls no-print">
+    <div>
+      <h2>Report Viewer</h2>
+      <p>{{ reportKey }}</p>
+    </div>
+
+    <label>
+      Variant
+      <select [(ngModel)]="variantCode">
+        <option *ngFor="let item of variants" [value]="item.variantCode">{{ item.variantName }}</option>
+      </select>
+    </label>
+
+    <button type="button" (click)="preview()" [disabled]="loading">Preview</button>
+    <button type="button" (click)="print()" [disabled]="!report">Print</button>
+  </div>
+
+  <div class="filter-panel no-print" *ngIf="parameters.length">
+    <label *ngFor="let parameter of parameters">
+      {{ parameter.displayName }}
+      <input *ngIf="parameter.controlType !== 'dropdown'" [type]="parameter.controlType === 'date' ? 'date' : 'text'" [(ngModel)]="parameterValues[parameter.parameterName]" />
+      <select *ngIf="parameter.controlType === 'dropdown'" [(ngModel)]="parameterValues[parameter.parameterName]">
+        <option [ngValue]="null">All</option>
+        <option *ngFor="let option of parameter.options || []" [ngValue]="option.id">{{ option.name }}</option>
+      </select>
+    </label>
+  </div>
+
+  <div *ngIf="error" class="alert error no-print">{{ error }}</div>
+  <div *ngIf="loading" class="alert no-print">Loading...</div>
+
+  <article class="report-paper" *ngIf="report">
+    <header class="report-header">
+      <div class="company-logo" *ngIf="report.layout.header.showLogo">ERP</div>
+      <div>
+        <h1>{{ report.layout.header.title || report.reportName }}</h1>
+        <p>{{ report.layout.header.subtitle }}</p>
+      </div>
+      <div class="report-meta">
+        <div>Report Date: {{ report.generatedAt || ('' | date) }}</div>
+        <div>Variant: {{ report.variantCode }}</div>
+      </div>
+    </header>
+
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of report.layout.columns" [style.width.px]="col.width">{{ col.caption }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of report.data">
+          <td *ngFor="let col of report.layout.columns" [class.right]="col.align === 'right'">{{ value(row, col.field) }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer class="report-footer">
+      <div *ngIf="report.layout.footer?.showPreparedBy">Prepared By</div>
+      <div *ngIf="report.layout.footer?.showSignature">Checked By</div>
+      <div *ngIf="report.layout.pageSettings.showPageNo">Page <span class="page-number"></span></div>
+    </footer>
+  </article>
+</section>

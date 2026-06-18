@@ -18,6 +18,7 @@ export class DynamicErpPage implements OnInit, OnDestroy {
   currentUrl = '';
   title = 'ERP Page';
   pageConfig?: CrudMasterConfig;
+  pageConfigKey = '';
   loading = false;
   error = '';
   private subscription?: Subscription;
@@ -49,6 +50,8 @@ export class DynamicErpPage implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = '';
+    this.pageConfig = undefined;
+    this.pageConfigKey = baseRoute;
     this.pageSub?.unsubscribe();
     this.pageSub = this.pageEngine.getPageDefinition(baseRoute).subscribe({
       next: (definition) => {

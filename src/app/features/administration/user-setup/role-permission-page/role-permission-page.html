@@ -1,0 +1,189 @@
+<section class="rp-page">
+  <div class="rp-hero">
+    <div class="hero-title">
+      <span class="hero-icon"><i class="pi pi-shield"></i></span>
+      <div>
+        <a class="rp-back" href="/erp/administration/user-setup">← Back to User Setup</a>
+        <h1>Role Permission</h1>
+        <p>Manage module, menu and submenu permissions for each role.</p>
+      </div>
+    </div>
+    <div class="rp-actions">
+      <button type="button" class="btn ghost" (click)="loadInitialData()" [disabled]="loading || saving">
+        <i class="pi pi-refresh"></i> Refresh
+      </button>
+      <button type="button" class="btn outline" (click)="clonePermissions()" [disabled]="!selectedRoleId || !cloneSourceRoleId || saving || loading">
+        <i class="pi pi-copy"></i> Clone Permission
+      </button>
+      <button type="button" class="btn primary" (click)="save()" [disabled]="saving || loading || !selectedRoleId">
+        <i class="pi pi-save"></i> {{ saving ? 'Saving...' : 'Save Permissions' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert error">{{ error }}</div>
+  <div *ngIf="success" class="alert success">{{ success }}</div>
+
+  <div class="rp-card selector-card">
+    <div class="selector-grid">
+      <label>
+        <span>Role <b>*</b></span>
+        <select [(ngModel)]="selectedRoleId" (change)="onRoleChange()">
+          <option value="">Search / Select Role</option>
+          <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Module <b>*</b></span>
+        <select [(ngModel)]="selectedModuleId" (change)="onModuleChange()">
+          <option value="">Search / Select Module</option>
+          <option *ngFor="let module of modules" [value]="module.moduleId">{{ module.moduleName }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Menu Filter</span>
+        <select [(ngModel)]="selectedMenuId" (change)="onMenuFilterChange()">
+          <option value="all">All Menus</option>
+          <option *ngFor="let menu of menus" [value]="menu.menuId">{{ menu.menuName }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Clone From Role</span>
+        <select [(ngModel)]="cloneSourceRoleId">
+          <option value="">Select source role</option>
+          <option *ngFor="let role of roles" [value]="role.id" [disabled]="role.id === selectedRoleId">{{ role.name }}</option>
+        </select>
+      </label>
+
+      <label class="checkbox-line clone-check">
+        <input type="checkbox" [(ngModel)]="cloneOverwrite" />
+        <span>Overwrite target permission while cloning</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="permission-layout">
+    <aside class="rp-card tree-card">
+      <div class="card-title">
+        <div>
+          <h2>Permission Tree</h2>
+          <p>{{ visibleRowsCache.length }} item(s) found.</p>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input type="text" placeholder="Search menu or submenu..." [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" />
+      </div>
+
+      <div *ngIf="loading" class="empty">Loading permissions...</div>
+      <div *ngIf="!loading && !selectedRoleId" class="empty">Please select a role to edit permission.</div>
+      <div *ngIf="!loading && selectedRoleId && groupedRowsCache.length === 0" class="empty">No menus/submenus found.</div>
+
+      <div *ngIf="!loading && selectedRoleId && groupedRowsCache.length" class="tree-scroll">
+        <div class="module-node">
+          <button type="button" class="node-toggle" disabled>▾</button>
+          <span class="node-badge module"><i class="pi pi-building-columns"></i></span>
+          <strong>{{ selectedModuleName }}</strong>
+        </div>
+
+        <div class="menu-group" *ngFor="let group of groupedRowsCache">
+          <button type="button" class="menu-node" (click)="toggleMenu(group.menu.menuId)">
+            <span class="node-toggle">{{ isExpanded(group.menu.menuId) ? '▾' : '▸' }}</span>
+            <span class="node-badge menu"><i class="pi" [ngClass]="group.menu.menuIcon || 'pi-folder'"></i></span>
+            <span>{{ group.menu.menuName }}</span>
+            <small>{{ group.rows.length }}</small>
+          </button>
+
+          <div class="submenu-list" *ngIf="isExpanded(group.menu.menuId)">
+            <button
+              type="button"
+              class="submenu-node"
+              *ngFor="let row of group.rows; trackBy: trackByRow"
+              [class.active]="isSelected(row)"
+              (click)="selectRow(row)">
+              <input type="checkbox" [ngModel]="row.isPermitted" (click)="$event.stopPropagation()" (ngModelChange)="setAll(row, $event)" />
+              <i class="pi" [ngClass]="row.subMenuIcon || 'pi-file'"></i>
+              <span>{{ row.subMenuName }}</span>
+              <em *ngIf="row.isPermitted">Allowed</em>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tree-actions">
+        <button type="button" class="btn small ghost" (click)="expandAll()"><i class="pi pi-angle-double-down"></i> Expand All</button>
+        <button type="button" class="btn small ghost" (click)="collapseAll()"><i class="pi pi-angle-double-up"></i> Collapse All</button>
+      </div>
+    </aside>
+
+    <main class="rp-card detail-card">
+      <div class="card-title">
+        <div>
+          <h2>Permission Details</h2>
+          <p>{{ selectedPath }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="!selectedRow" class="empty detail-empty">Select a menu/submenu from the left tree.</div>
+
+      <ng-container *ngIf="selectedRow as row">
+        <div class="selected-summary">
+          <span class="summary-icon"><i class="pi" [ngClass]="row.subMenuIcon || 'pi-lock'"></i></span>
+          <div>
+            <h3>{{ row.subMenuName }}</h3>
+            <p>Role: <strong>{{ selectedRoleName }}</strong> · Menu: <strong>{{ row.menuName }}</strong></p>
+          </div>
+          <label class="master-switch">
+            <input type="checkbox" [ngModel]="row.isPermitted" (ngModelChange)="setAll(row, $event)" />
+            <span>Allowed</span>
+          </label>
+        </div>
+
+        <section class="permission-section">
+          <div class="section-head">
+            <h3>Action Level Permissions</h3>
+            <p>Set permissions for this selected page.</p>
+          </div>
+
+          <div class="permission-grid">
+            <label class="permission-tile" *ngFor="let permission of permissions" [class.enabled]="getPermission(row, permission.key)">
+              <span class="tile-icon"><i class="pi" [ngClass]="getPermissionIcon(permission.key)"></i></span>
+              <span class="tile-text">
+                <strong>{{ permission.label }}</strong>
+                <small>Allow {{ permission.label.toLowerCase() }}</small>
+              </span>
+              <input type="checkbox" [ngModel]="getPermission(row, permission.key)" (ngModelChange)="setPermission(row, permission.key, $event)" />
+            </label>
+          </div>
+        </section>
+
+        <section class="quick-actions">
+          <div class="section-head">
+            <h3>Quick Actions</h3>
+            <p>Apply multiple permissions at once.</p>
+          </div>
+          <div class="tool-buttons">
+            <button type="button" class="mini allow" (click)="applySelected(true)">Allow Page All</button>
+            <button type="button" class="mini deny" (click)="applySelected(false)">Clear Page</button>
+            <button type="button" class="mini info" (click)="applySelectedReadOnly()">Page Read Only</button>
+            <button type="button" class="mini allow" (click)="applyToSelectedMenu(true)">Allow Menu</button>
+            <button type="button" class="mini deny" (click)="applyToSelectedMenu(false)">Clear Menu</button>
+            <button type="button" class="mini info" (click)="applyReadOnlyToSelectedMenu()">Menu Read Only</button>
+            <button type="button" class="mini allow" (click)="applyToCurrentModule(true)">Allow Module</button>
+            <button type="button" class="mini deny" (click)="applyToCurrentModule(false)">Clear Module</button>
+            <button type="button" class="mini info" (click)="applyReadOnlyToCurrentModule()">Module Read Only</button>
+          </div>
+        </section>
+
+        <div class="legend-box">
+          <i class="pi pi-info-circle"></i>
+          V: View, C: Create, E: Edit, U: Update, D: Delete, P: Print, X: Export, A: Approve
+        </div>
+      </ng-container>
+    </main>
+  </div>
+</section>

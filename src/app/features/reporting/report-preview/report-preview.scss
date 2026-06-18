@@ -1,0 +1,28 @@
+.preview-page { padding: 20px 24px 32px; background: #f4faf8; min-height: calc(100vh - 80px); color: #0f2345; }
+.preview-toolbar { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 14px; }
+.eyebrow { margin: 0 0 4px; color: #059669; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+h1, h2 { margin: 0; color: #001846; }
+.actions { display: flex; gap: 10px; align-items: center; }
+input { border: 1px solid #d7e1ef; border-radius: 8px; padding: 10px 12px; }
+button { border: 1px solid #d7e1ef; background: #fff; border-radius: 9px; padding: 10px 13px; cursor: pointer; font-weight: 700; }
+button.primary { background: #063b75; color: #fff; border-color: #063b75; }
+.alert { border: 1px solid #fecaca; background: #fff1f2; color: #b91c1c; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+.paper { width: 980px; min-height: 1320px; background: #fff; margin: 0 auto; padding: 42px; border: 1px solid #d8e2ef; box-shadow: 0 8px 30px rgba(0,0,0,.12); position: relative; }
+.report-header { display: grid; grid-template-columns: 130px 1fr; gap: 22px; align-items: start; margin-bottom: 28px; }
+.logo { height: 90px; border: 1px solid #cbd5e1; border-radius: 12px; display: grid; place-items: center; color: #64748b; font-weight: 800; }
+.company { text-align: center; }
+.company h2 { font-size: 24px; margin-bottom: 6px; }
+.company p { margin: 2px 0; color: #334155; }
+.company h1 { font-size: 22px; margin-top: 18px; }
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-bottom: 22px; }
+.meta-grid div { display: grid; gap: 3px; }
+.meta-grid b { color: #0f2345; }
+.report-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+.report-table th { background: #0f3b75; color: #fff; padding: 10px; border: 1px solid #0f3b75; }
+.report-table td { padding: 10px; border: 1px solid #cbd5e1; text-align: center; }
+.report-table td:nth-child(3) { text-align: left; }
+.total td { font-weight: 800; background: #f1f5f9; text-align: right !important; }
+.report-footer { display: grid; grid-template-columns: 1fr 240px; gap: 24px; margin-top: 38px; }
+.signature { align-self: end; text-align: center; padding-top: 70px; border-top: 1px solid #64748b; font-weight: 800; }
+.page-no { position: absolute; right: 42px; bottom: 24px; color: #64748b; font-size: 12px; }
+@media print { .no-print { display: none !important; } .preview-page { padding: 0; background: #fff; } .paper { width: auto; min-height: auto; box-shadow: none; border: 0; margin: 0; } @page { size: A4 portrait; margin: 12mm; } }

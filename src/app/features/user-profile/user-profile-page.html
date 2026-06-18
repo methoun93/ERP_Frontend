@@ -1,0 +1,38 @@
+<section class="profile-page">
+  <div class="profile-hero">
+    <button type="button" (click)="back()"><i class="pi pi-arrow-left"></i> Back to Dashboard</button>
+    <h1>My Profile</h1>
+    <p>View your login, company, area and uploaded signature information.</p>
+  </div>
+
+  <div class="profile-grid">
+    <aside class="profile-card identity">
+      <div class="photo" [class.empty]="!profileImageUrl">
+        <img *ngIf="profileImageUrl" [src]="profileImageUrl" alt="User photo" />
+        <span *ngIf="!profileImageUrl">No Image</span>
+      </div>
+      <h2>{{ displayName }}</h2>
+      <p>{{ user?.email || '-' }}</p>
+      <span class="status">{{ user?.isActive === false ? 'Inactive' : 'Active' }}</span>
+    </aside>
+
+    <main class="profile-card details">
+      <h2>Account Information</h2>
+      <dl>
+        <div><dt>Username</dt><dd>{{ user?.username || '-' }}</dd></div>
+        <div><dt>Employee Id</dt><dd>{{ user?.empId || '-' }}</dd></div>
+        <div><dt>Email</dt><dd>{{ user?.email || '-' }}</dd></div>
+        <div><dt>Role</dt><dd>{{ user?.roleName || user?.role || '-' }}</dd></div>
+        <div><dt>Company</dt><dd>{{ context?.companyName || user?.companyName || '-' }}</dd></div>
+        <div><dt>Area</dt><dd>{{ context?.areaName || user?.areaName || '-' }}</dd></div>
+      </dl>
+
+      <h2>Signature</h2>
+      <div class="signature" [class.empty]="!signatureImageUrl">
+        <img *ngIf="signatureImageUrl" [src]="signatureImageUrl" alt="Signature" />
+        <span *ngIf="!signatureImageUrl">No Signature</span>
+      </div>
+      <p class="error" *ngIf="error">{{ error }}</p>
+    </main>
+  </div>
+</section>

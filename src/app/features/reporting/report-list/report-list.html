@@ -1,0 +1,32 @@
+<section class="reporting-page">
+  <div class="reporting-toolbar">
+    <div>
+      <h2>Reporting</h2>
+      <p>SP based dynamic report viewer, template and variant manager.</p>
+    </div>
+    <a class="btn primary" routerLink="/erp/reporting/builder">New Template</a>
+  </div>
+
+  <div *ngIf="error" class="alert error">{{ error }}</div>
+  <div *ngIf="loading" class="alert">Loading reports...</div>
+
+  <div class="report-card-grid" *ngIf="!loading">
+    <article class="report-card" *ngFor="let report of reports">
+      <div class="report-icon">R</div>
+      <div class="report-content">
+        <h3>{{ report.reportName }}</h3>
+        <p>{{ report.reportKey }}</p>
+        <span>{{ report.reportType }}</span>
+      </div>
+      <div class="report-actions">
+        <a [routerLink]="['/erp/reporting/viewer', report.reportKey]">View</a>
+        <a [routerLink]="['/erp/reporting/builder', report.reportKey]">Builder</a>
+        <a [routerLink]="['/erp/reporting/variants', report.reportKey]">Variants</a>
+      </div>
+    </article>
+
+    <div class="empty" *ngIf="reports.length === 0">
+      No reports found. Insert report master data in Rpt_Reports first.
+    </div>
+  </div>
+</section>

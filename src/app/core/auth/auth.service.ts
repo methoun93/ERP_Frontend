@@ -25,10 +25,16 @@ export class AuthService {
         this.tokenStore.setAccess(access);
         if (res.refreshToken) this.tokenStore.setRefresh(res.refreshToken);
         this.tokenStore.setUser({
-          id: String(res.userId ?? res.user?.id ?? ''),
+          id: String(res.userId ?? res.user?.userId ?? res.user?.id ?? res.id ?? ''),
+          userId: String(res.userId ?? res.user?.userId ?? res.user?.id ?? res.id ?? ''),
           username: res.username ?? res.user?.username ?? payload.username,
+          fullName: res.fullName ?? res.user?.fullName ?? res.username ?? res.user?.username ?? payload.username,
           email: res.email ?? res.user?.email ?? '',
           role: String(res.role ?? res.user?.role ?? ''),
+          roleName: res.roleName ?? res.user?.roleName ?? res.primaryRoleName ?? res.user?.primaryRoleName ?? undefined,
+          primaryRoleName: res.primaryRoleName ?? res.user?.primaryRoleName ?? undefined,
+          profileImageUrl: res.profileImageUrl ?? res.user?.profileImageUrl ?? undefined,
+          signatureImageUrl: res.signatureImageUrl ?? res.user?.signatureImageUrl ?? undefined,
           areaId: res.areaId ? String(res.areaId) : undefined,
         });
         this.tokenStore.clearContext();

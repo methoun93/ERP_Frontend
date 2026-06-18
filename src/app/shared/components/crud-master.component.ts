@@ -210,6 +210,7 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
 
   private sub?: Subscription;
   private searchTimer?: ReturnType<typeof setTimeout>;
+  private lastAppliedUrl = '';
 
   constructor(
     private readonly api: ApiClientService,
@@ -232,11 +233,12 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['config'] && this.config) {
+      this.resetListState();
       this.preparePaging();
       this.prepareFormMetadata();
       this.buildForm();
       this.loadLookupOptions();
-      this.applyUrl(this.router.url);
+      this.applyUrl(this.router.url, true);
     }
   }
 
@@ -405,13 +407,18 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
     URL.revokeObjectURL(url);
   }
 
-  private applyUrl(url: string): void {
-    const parts = this.cleanUrl(url).split('/').filter(Boolean);
+  private applyUrl(url: string, forceReload = false): void {
+    const cleanUrl = this.cleanUrl(url);
+    if (!forceReload && cleanUrl === this.lastAppliedUrl && this.mode === 'list') return;
+    this.lastAppliedUrl = cleanUrl;
+
+    const parts = cleanUrl.split('/').filter(Boolean);
     const createIndex = parts.indexOf('create');
     const editIndex = parts.indexOf('edit');
     const viewIndex = parts.indexOf('view');
 
     if (createIndex >= 0) {
+      this.resetListState(false);
       this.mode = 'create';
       this.id = null;
       this.enableForm(true);
@@ -421,6 +428,7 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
     }
 
     if (editIndex >= 0) {
+      this.resetListState(false);
       this.mode = 'edit';
       this.id = parts[editIndex + 1] ? decodeURIComponent(parts[editIndex + 1]) : null;
       this.enableForm(true);
@@ -429,6 +437,7 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
     }
 
     if (viewIndex >= 0) {
+      this.resetListState(false);
       this.mode = 'view';
       this.id = parts[viewIndex + 1] ? decodeURIComponent(parts[viewIndex + 1]) : null;
       this.enableForm(false);
@@ -436,11 +445,28 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
       return;
     }
 
+    this.resetListState();
     this.mode = 'list';
     this.id = null;
     this.loadRows();
   }
 
+
+  private resetListState(resetPaging = true): void {
+    this.rows = [];
+    this.totalRows = 0;
+    this.loading = false;
+    this.saving = false;
+    this.deleteCandidate = null;
+    this.exportOpen = false;
+    this.selectedFiles = {};
+    if (resetPaging) {
+      this.currentPage = 1;
+      this.searchText = '';
+      this.sortKey = '';
+      this.sortDirection = '';
+    }
+  }
 
   private preparePaging(): void {
     this.pageSize = Number(this.config?.pageSize) || ERP_UI_CONFIG.defaultPageSize;
@@ -460,6 +486,16 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
 
   private buildPayload(): unknown {
     const raw = this.formGroup.getRawValue() as Record<string, any>;
+
+    // User access screens use future-ready multi access fields while keeping
+    // backward-compatible default columns in Adm_Users.
+    if (raw['primaryRoleId'] && !raw['roleId']) raw['roleId'] = raw['primaryRoleId'];
+    if (raw['defaultAreaId'] && !raw['areaId']) raw['areaId'] = raw['defaultAreaId'];
+    if (raw['defaultCompanyId']) {
+      if (!raw['compId']) raw['compId'] = raw['defaultCompanyId'];
+      if (!raw['companyId']) raw['companyId'] = raw['defaultCompanyId'];
+    }
+
     const files = Object.entries(this.selectedFiles);
     if (!files.length) return raw;
 
@@ -476,25 +512,40 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
 
 
 
-  private loadLookupOptions(): void {
-    for (const field of this.allFields()) {
-      if (!field.lookupApi) continue;
-      this.api.get<ListResponse<Record<string, any>>>(field.lookupApi).subscribe({
-        next: (res) => {
-          const rows = this.normalizeList(res);
-          const valueKey = field.optionValueKey || 'id';
-          const labelKey = field.optionLabelKey || 'name';
-          field.options = rows.map(row => ({
+ private loadLookupOptions(): void {
+  for (const field of this.allFields()) {
+    if (!field.lookupApi) continue;
+
+    this.api.get<ListResponse<Record<string, any>>>(field.lookupApi).subscribe({
+      next: (res) => {
+        const rows = this.normalizeList<Record<string, any>>(res);
+        const valueKey = field.optionValueKey || 'id';
+        const labelKey = field.optionLabelKey || 'name';
+
+        field.options = rows
+          .map((row: Record<string, any>) => ({
             value: row[valueKey] ?? row['value'] ?? row['id'] ?? row['compId'],
-            label: String(row[labelKey] ?? row['label'] ?? row['name'] ?? row['compName'] ?? row['companyName'] ?? '')
-          })).filter(option => option.value !== undefined && option.value !== null && option.label);
-        },
-        error: () => {
-          field.options = [];
-        }
-      });
-    }
+            label: String(
+              row[labelKey] ??
+              row['label'] ??
+              row['name'] ??
+              row['compName'] ??
+              row['companyName'] ??
+              ''
+            )
+          }))
+          .filter(option =>
+            option.value !== undefined &&
+            option.value !== null &&
+            option.label
+          );
+      },
+      error: () => {
+        field.options = [];
+      }
+    });
   }
+}
 
   private buildForm(): void {
     const group: Record<string, FormControl> = {};
@@ -596,14 +647,36 @@ export class CrudMasterComponent<TForm = any, TRow extends Record<string, any> =
     );
   }
 
-  private normalizeList<T>(response: ListResponse<T>): T[] {
-    if (Array.isArray(response)) return response;
-    return response?.items || response?.Items || response?.data || response?.Data || response?.result || response?.Result || response?.records || response?.Records || [];
+  private normalizeList<T>(response: any): T[] {
+    if (Array.isArray(response)) return response.map(item => this.normalizeRowKeys(item)) as T[];
+
+    const source = response?.data ?? response?.Data ?? response;
+    const rows = source?.items || source?.Items || source?.data || source?.Data || source?.result || source?.Result || source?.records || source?.Records || [];
+
+    return Array.isArray(rows) ? rows.map(item => this.normalizeRowKeys(item)) as T[] : [];
   }
 
-  private getTotalCount<T>(response: ListResponse<T>, fallback: number): number {
+  private getTotalCount<T>(response: any, fallback: number): number {
     if (Array.isArray(response)) return response.length;
-    return Number(response?.totalCount ?? response?.TotalCount ?? response?.total ?? response?.Total ?? response?.count ?? response?.Count ?? fallback);
+
+    const source = response?.data ?? response?.Data ?? response;
+    return Number(source?.totalCount ?? source?.TotalCount ?? source?.total ?? source?.Total ?? source?.count ?? source?.Count ?? fallback);
+  }
+
+  private normalizeRowKeys<T>(row: T): T {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return row;
+
+    const source = row as Record<string, any>;
+    const normalized: Record<string, any> = { ...source };
+    for (const key of Object.keys(source)) {
+      if (!key) continue;
+      const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+      const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+      if (normalized[camelKey] === undefined) normalized[camelKey] = source[key];
+      if (normalized[pascalKey] === undefined) normalized[pascalKey] = source[key];
+    }
+
+    return normalized as T;
   }
 
   private buildListUrl(): string {

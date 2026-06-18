@@ -69,8 +69,16 @@ p { margin: 1px 0 0; color: #667085; font-size: 12px; }
   width: 100%;
 }
 
-:host ::ng-deep .erp-search-select .p-select-label {
+:host ::ng-deep .erp-search-select .p-select-label,
+:host ::ng-deep .erp-multi-select .p-multiselect-label {
   width: 100%;
+}
+
+:host ::ng-deep .erp-multi-select .p-multiselect-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
 }
 .btn:hover { background: #f7faf9; border-color: #bfd2c9; }
 .btn.primary { background: #047857; color: #fff; border-color: #047857; }
@@ -79,7 +87,7 @@ p { margin: 1px 0 0; color: #667085; font-size: 12px; }
 .btn.secondary { background: #fff; color: #1f2937; }
 .btn i { font-size: 12px; }
 
-.erp-form-body { padding: 10px; display: grid; gap: 10px; background: #f7faf8; }
+.erp-form-body { padding: 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; background: #f7faf8; }
 .erp-form-section { border: 1px solid #e3ece7; border-radius: 9px; padding: 11px; background: #fff; }
 .section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eef3f1; }
 .section-icon { width: 25px; height: 25px; border-radius: 7px; display: grid; place-items: center; color: #047857; background: #f0faf5; border: 1px solid #dceee6; }
@@ -152,3 +160,23 @@ input[readonly], textarea[readonly] { background: #f8fafc; color: #64748b; }
 
 /* Final layout safety */
 .erp-form-card { margin-bottom: 0; }
+
+
+/* User-friendly compact form layout */
+.erp-form-section.section-full { grid-column: span 2 !important; }
+.erp-form-section.section-half { grid-column: span 1 !important; }
+.erp-form-section.section-compact { padding: 10px 11px; }
+.erp-form-section.section-compact .section-title { margin-bottom: 8px; padding-bottom: 7px; }
+.erp-form-section.section-compact .field-grid { gap: 7px 10px; }
+.erp-form-section.section-hero { border-color: #cdeee0; background: linear-gradient(180deg, #ffffff 0%, #fbfffd 100%); }
+.erp-form-section.section-soft { background: #fcfffd; }
+.erp-form-section.section-access { border-color: #d9efe5; }
+.erp-form-section.section-access .section-icon { background: #eafaf3; color: #047857; }
+:host ::ng-deep .erp-search-select .p-select,
+:host ::ng-deep .erp-multi-select.p-multiselect { min-height: 33px; }
+:host ::ng-deep .erp-multi-select .p-multiselect-label { padding-top: 4px; padding-bottom: 4px; min-height: 31px; }
+:host ::ng-deep .erp-multi-select .p-multiselect-token { font-size: 11px; padding: 2px 6px; border-radius: 999px; background: #e8f7ef; color: #075e47; }
+@media (max-width: 1100px) {
+  .erp-form-body { grid-template-columns: 1fr; }
+  .erp-form-section, .erp-form-section.section-half, .erp-form-section.section-full { grid-column: span 1 !important; }
+}

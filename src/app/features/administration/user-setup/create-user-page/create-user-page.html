@@ -1,0 +1,249 @@
+<p-confirmDialog></p-confirmDialog>
+
+<section class="cu-page">
+  <div class="cu-hero">
+    <div class="hero-title">
+      <span class="hero-icon"><i class="pi" [ngClass]="mode === 'list' ? 'pi-users' : 'pi-user-plus'"></i></span>
+      <div>
+        <a class="back-link" *ngIf="isFormMode" (click)="goBack()">← Back to Create User List</a>
+        <h1>{{ pageTitle }}</h1>
+        <p>{{ pageSubtitle }}</p>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <button type="button" class="btn ghost" (click)="refresh()" [disabled]="saving || loading || listLoading"><i class="pi pi-refresh"></i> Refresh</button>
+      <button type="button" class="btn ghost" (click)="reset()" [disabled]="saving || loading || listLoading"><i class="pi pi-undo"></i> Reset</button>
+      <button type="button" class="btn primary" *ngIf="mode === 'list'" (click)="addNew()"><i class="pi pi-plus"></i> Add User</button>
+      <button type="button" class="btn primary" *ngIf="isFormMode" (click)="save()" [disabled]="saving || loading"><i class="pi pi-save"></i> {{ saving ? 'Saving...' : 'Save User' }}</button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert error">{{ error }}</div>
+  <div *ngIf="loading || listLoading" class="loading-card">Loading user setup data...</div>
+
+  <ng-container *ngIf="!loading && !listLoading">
+    <section class="list-card" *ngIf="mode === 'list'">
+      <div class="list-head">
+        <div>
+          <h2>User List</h2>
+          <p>{{ filteredRows.length }} user(s) found.</p>
+        </div>
+        <div class="list-search">
+          <i class="pi pi-search"></i>
+          <input type="text" [(ngModel)]="listSearch" (ngModelChange)="applyListFilter()" placeholder="Search username, email, role, company or area..." />
+        </div>
+      </div>
+
+      <div class="table-wrap" *ngIf="filteredRows.length; else emptyUsers">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Employee Id</th>
+              <th>Primary Role</th>
+              <th>Companies</th>
+              <th>Default Area</th>
+              <th>Status</th>
+              <th class="action-col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredRows">
+              <td>
+                <div class="user-cell">
+                  <span class="mini-avatar">{{ (row.username || row.email || 'U').charAt(0).toUpperCase() }}</span>
+                  <div>
+                    <strong>{{ row.username || '-' }}</strong>
+                    <small>{{ row.email || '-' }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ row.empId || '-' }}</td>
+              <td>{{ row.roleName || '-' }}</td>
+              <td>{{ row.companyNames || '-' }}</td>
+              <td>{{ row.areaName || '-' }}</td>
+              <td><span class="status" [class.off]="!row.isActive">{{ row.isActive ? 'Active' : 'Inactive' }}</span></td>
+              <td class="actions">
+                <button type="button" class="icon-btn" title="Edit" (click)="edit(row)"><i class="pi pi-pencil"></i></button>
+                <button type="button" class="icon-btn danger" title="Delete" (click)="delete(row)" [disabled]="deletingId === rowId(row)"><i class="pi pi-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #emptyUsers>
+        <div class="empty-state">
+          <i class="pi pi-users"></i>
+          <h3>No users found</h3>
+          <p>Create the first ERP user or adjust your search.</p>
+          <button type="button" class="btn primary" (click)="addNew()"><i class="pi pi-plus"></i> Add User</button>
+        </div>
+      </ng-template>
+    </section>
+
+    <div class="cu-layout" *ngIf="isFormMode">
+      <main class="cu-main">
+        <section class="cu-card login-card">
+          <div class="section-head">
+            <span><i class="pi pi-id-card"></i></span>
+            <div>
+              <h2>Login Information</h2>
+              <p>Password is required only while creating a new user.</p>
+            </div>
+          </div>
+          <div class="form-grid four">
+            <label>
+              <strong>Username <b>*</b></strong>
+              <input type="text" [(ngModel)]="model.username" placeholder="Enter username" />
+            </label>
+            <label>
+              <strong>Email <b>*</b></strong>
+              <input type="email" [(ngModel)]="model.email" placeholder="Enter email address" />
+            </label>
+            <label>
+              <strong>Employee Id</strong>
+              <input type="text" [(ngModel)]="model.empId" placeholder="Employee code / ID" />
+            </label>
+            <label>
+              <strong>Password <b *ngIf="!isEdit">*</b></strong>
+              <input type="password" [(ngModel)]="model.password" placeholder="{{ isEdit ? 'Leave blank to keep old password' : 'Set password' }}" />
+            </label>
+          </div>
+          <label class="active-line">
+            <input type="checkbox" [(ngModel)]="model.isActive" />
+            <span>
+              <strong>Active User</strong>
+              <small>Allow this user to login and use ERP.</small>
+            </span>
+          </label>
+
+          <div class="image-upload-grid">
+            <div class="image-upload-card">
+              <div class="image-preview profile">
+                <img *ngIf="profilePreviewUrl || model.profileImageUrl" [src]="profilePreviewUrl || mediaUrl(model.profileImageUrl)" alt="Profile image" />
+                <span *ngIf="!profilePreviewUrl && !model.profileImageUrl"><i class="pi pi-user"></i><small>No Image</small></span>
+              </div>
+              <div>
+                <strong>Profile Image</strong>
+                <small>JPG/PNG, max 2 MB. Path saves in ProfileImageUrl.</small>
+                <input type="file" accept="image/*" (change)="onProfileImageSelected($event)" />
+                <button type="button" class="tiny danger" *ngIf="profilePreviewUrl || model.profileImageUrl" (click)="clearProfileImage()">Remove</button>
+              </div>
+            </div>
+            <div class="image-upload-card">
+              <div class="image-preview signature">
+                <img *ngIf="signaturePreviewUrl || model.signatureImageUrl" [src]="signaturePreviewUrl || mediaUrl(model.signatureImageUrl)" alt="Signature image" />
+                <span *ngIf="!signaturePreviewUrl && !model.signatureImageUrl"><i class="pi pi-pencil"></i><small>No Signature</small></span>
+              </div>
+              <div>
+                <strong>Signature Image</strong>
+                <small>PNG preferred, max 2 MB. Path saves in SignatureImageUrl.</small>
+                <input type="file" accept="image/*" (change)="onSignatureImageSelected($event)" />
+                <button type="button" class="tiny danger" *ngIf="signaturePreviewUrl || model.signatureImageUrl" (click)="clearSignatureImage()">Remove</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="access-grid">
+          <section class="cu-card access-card">
+            <div class="section-head">
+              <span><i class="pi pi-shield"></i></span>
+              <div>
+                <h2>Role Access</h2>
+                <p>Assign one or more roles and choose the primary role.</p>
+              </div>
+            </div>
+            <div class="access-toolbar">
+              <input type="text" [(ngModel)]="roleSearch" placeholder="Search role..." />
+              <button type="button" (click)="selectAll('roleIds', filteredRoles())">Select All</button>
+              <button type="button" class="danger" (click)="clearAll('roleIds')">Clear</button>
+            </div>
+            <div class="choice-list">
+              <label class="choice" *ngFor="let role of filteredRoles()" [class.selected]="isSelected('roleIds', role.id)">
+                <input type="checkbox" [checked]="isSelected('roleIds', role.id)" (change)="toggleSelection('roleIds', role.id)" />
+                <span>{{ role.name }}</span>
+                <button type="button" *ngIf="isSelected('roleIds', role.id)" (click)="$event.preventDefault(); setPrimaryRole(role.id)">{{ model.primaryRoleId === role.id ? 'Primary' : 'Make Primary' }}</button>
+              </label>
+            </div>
+          </section>
+
+          <section class="cu-card access-card">
+            <div class="section-head">
+              <span><i class="pi pi-building"></i></span>
+              <div>
+                <h2>Company Access</h2>
+                <p>Select companies and choose the default company.</p>
+              </div>
+            </div>
+            <div class="access-toolbar">
+              <input type="text" [(ngModel)]="companySearch" placeholder="Search company..." />
+              <button type="button" (click)="selectAll('companyIds', filteredCompanies())">Select All</button>
+              <button type="button" class="danger" (click)="clearAll('companyIds')">Clear</button>
+            </div>
+            <div class="choice-list">
+              <label class="choice" *ngFor="let company of filteredCompanies()" [class.selected]="isSelected('companyIds', company.id)">
+                <input type="checkbox" [checked]="isSelected('companyIds', company.id)" (change)="toggleSelection('companyIds', company.id)" />
+                <span>{{ company.name }}</span>
+                <button type="button" *ngIf="isSelected('companyIds', company.id)" (click)="$event.preventDefault(); setDefaultCompany(company.id)">{{ model.defaultCompanyId === company.id ? 'Default' : 'Make Default' }}</button>
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <section class="cu-card access-card area-card">
+          <div class="section-head">
+            <span><i class="pi pi-map-marker"></i></span>
+            <div>
+              <h2>Area Access</h2>
+              <p>Select accessible areas and choose the default area for login context.</p>
+            </div>
+          </div>
+          <div class="access-toolbar">
+            <input type="text" [(ngModel)]="areaSearch" placeholder="Search area..." />
+            <button type="button" (click)="selectAll('areaIds', filteredAreas())">Select All</button>
+            <button type="button" class="danger" (click)="clearAll('areaIds')">Clear</button>
+          </div>
+          <div class="choice-list area-list">
+            <label class="choice" *ngFor="let area of filteredAreas()" [class.selected]="isSelected('areaIds', area.id)">
+              <input type="checkbox" [checked]="isSelected('areaIds', area.id)" (change)="toggleSelection('areaIds', area.id)" />
+              <span>{{ area.name }}</span>
+              <button type="button" *ngIf="isSelected('areaIds', area.id)" (click)="$event.preventDefault(); setDefaultArea(area.id)">{{ model.defaultAreaId === area.id ? 'Default' : 'Make Default' }}</button>
+            </label>
+          </div>
+        </section>
+      </main>
+
+      <aside class="summary-card">
+        <div class="summary-head">
+          <span class="avatar">{{ (model.username || 'U').charAt(0).toUpperCase() }}</span>
+          <div>
+            <h2>User Summary</h2>
+            <p>Live preview before save.</p>
+          </div>
+        </div>
+        <dl>
+          <div><dt>Username</dt><dd>{{ model.username || '-' }}</dd></div>
+          <div><dt>Email</dt><dd>{{ model.email || '-' }}</dd></div>
+          <div><dt>Status</dt><dd><span class="status" [class.off]="!model.isActive">{{ model.isActive ? 'Active' : 'Inactive' }}</span></dd></div>
+          <div><dt>Primary Role</dt><dd>{{ primaryRoleName || '-' }}</dd></div>
+          <div><dt>Default Company</dt><dd>{{ defaultCompanyName || '-' }}</dd></div>
+          <div><dt>Default Area</dt><dd>{{ defaultAreaName || '-' }}</dd></div>
+        </dl>
+        <div class="chip-section">
+          <h3>Assigned Roles</h3>
+          <div class="chips"><span *ngFor="let name of selectedRoleNames">{{ name }}</span><em *ngIf="!selectedRoleNames.length">No role selected</em></div>
+        </div>
+        <div class="chip-section">
+          <h3>Companies</h3>
+          <div class="chips"><span *ngFor="let name of selectedCompanyNames">{{ name }}</span><em *ngIf="!selectedCompanyNames.length">No company selected</em></div>
+        </div>
+        <div class="chip-section">
+          <h3>Areas</h3>
+          <div class="chips"><span *ngFor="let name of selectedAreaNames">{{ name }}</span><em *ngIf="!selectedAreaNames.length">No area selected</em></div>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+</section>

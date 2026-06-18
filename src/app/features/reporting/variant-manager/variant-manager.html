@@ -1,0 +1,33 @@
+<section class="variant-page">
+  <div class="header">
+    <div>
+      <h2>Report Variants</h2>
+      <p>{{ reportKey }}</p>
+    </div>
+    <a routerLink="/erp/reporting">Back</a>
+  </div>
+
+  <div *ngIf="error" class="alert error">{{ error }}</div>
+  <div *ngIf="loading" class="alert">Loading variants...</div>
+
+  <table *ngIf="!loading">
+    <thead>
+      <tr>
+        <th>Variant Code</th>
+        <th>Variant Name</th>
+        <th>Default</th>
+        <th>Active</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of variants">
+        <td>{{ item.variantCode }}</td>
+        <td>{{ item.variantName }}</td>
+        <td>{{ item.isDefault ? 'Yes' : 'No' }}</td>
+        <td>{{ item.isActive ? 'Yes' : 'No' }}</td>
+        <td><a [routerLink]="['/erp/reporting/builder', reportKey]" [queryParams]="{ variant: item.variantCode }">Edit Template</a></td>
+      </tr>
+    </tbody>
+  </table>
+</section>

@@ -1,0 +1,90 @@
+<section class="reporting-dashboard-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Reporting Module</p>
+      <h1>Reporting Dashboard</h1>
+      <p class="subtitle">Central module dashboard for printable report design, library and preview.</p>
+    </div>
+    <button class="primary-btn" type="button" (click)="open('/erp/reporting/builder')">+ New Report</button>
+  </div>
+
+  <div class="summary-grid">
+    <article class="summary-card">
+      <span class="icon"><i class="pi pi-file"></i></span>
+      <div>
+        <small>Total Reports</small>
+        <strong>{{ totalReports }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="icon"><i class="pi pi-print"></i></span>
+      <div>
+        <small>Printable Layouts</small>
+        <strong>{{ layoutReports }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="icon"><i class="pi pi-table"></i></span>
+      <div>
+        <small>Grid Reports</small>
+        <strong>{{ gridReports }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card">
+      <span class="icon"><i class="pi pi-check-circle"></i></span>
+      <div>
+        <small>Active Reports</small>
+        <strong>{{ activeReports }}</strong>
+      </div>
+    </article>
+  </div>
+
+  <div class="dashboard-layout">
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Quick Actions</h2>
+          <p>Use submenu or these shortcuts to open reporting features.</p>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <button type="button" class="quick-card" *ngFor="let action of quickActions" (click)="open(action.route)">
+          <span class="quick-icon"><i [class]="action.icon"></i></span>
+          <span class="quick-copy">
+            <strong>{{ action.title }}</strong>
+            <small>{{ action.description }}</small>
+          </span>
+          <i class="pi pi-angle-right"></i>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel recent-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Recent Reports</h2>
+          <p>Latest reports from Rpt_Reports.</p>
+        </div>
+        <button type="button" (click)="open('/erp/reporting/library')">View All</button>
+      </div>
+
+      <div class="empty" *ngIf="!loading && !reports.length">
+        No report master found. Create reports from Report Builder or insert data in Rpt_Reports.
+      </div>
+
+      <div class="report-list" *ngIf="reports.length">
+        <button type="button" class="report-row" *ngFor="let report of reports.slice(0, 5)" (click)="open('/erp/reporting/preview?reportId=' + report.id + '&reportKey=' + report.reportKey)">
+          <span>
+            <strong>{{ report.reportName }}</strong>
+            <small>{{ report.reportNo || report.reportKey }} · {{ report.moduleName || 'General' }}</small>
+          </span>
+          <span class="badge">{{ report.reportType || 'REPORT' }}</span>
+        </button>
+      </div>
+    </section>
+  </div>
+</section>

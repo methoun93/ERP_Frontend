@@ -1,0 +1,56 @@
+<section class="preview-page">
+  <div class="preview-toolbar no-print">
+    <div>
+      <p class="eyebrow">Reporting</p>
+      <h1>Report Preview</h1>
+    </div>
+    <div class="actions">
+      <input [(ngModel)]="reportKey" placeholder="Report Key" />
+      <input [(ngModel)]="orderId" placeholder="Order ID" />
+      <button type="button" (click)="render()">Render</button>
+      <button type="button" class="primary" (click)="print()">Print</button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert no-print">{{ error }} Demo preview is shown until render API is ready.</div>
+
+  <div class="paper">
+    <header class="report-header">
+      <div class="logo">LOGO</div>
+      <div class="company">
+        <h2>Company Name</h2>
+        <p>Address Line 1, Address Line 2</p>
+        <p>Phone: 0000000000, Email: info@company.com</p>
+        <h1>PURCHASE ORDER</h1>
+      </div>
+    </header>
+
+    <section class="meta-grid">
+      <div><b>Supplier</b><span>XYZ Garments Ltd.</span></div>
+      <div><b>Attention</b><span>Mr. John Doe</span></div>
+      <div><b>PO No</b><span>{{ orderId }}</span></div>
+      <div><b>Date</b><span>01-May-2024</span></div>
+      <div><b>Currency</b><span>USD</span></div>
+      <div><b>Delivery Date</b><span>10-May-2024</span></div>
+    </section>
+
+    <table class="report-table">
+      <thead>
+        <tr><th>SL</th><th>Item Code</th><th>Item Description</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows; let i = index">
+          <td>{{ i + 1 }}</td><td>{{ row.itemCode }}</td><td>{{ row.itemDescription }}</td><td>{{ row.uom }}</td><td>{{ row.qty | number }}</td><td>{{ row.rate | number:'1.2-2' }}</td><td>{{ row.amount | number:'1.2-2' }}</td>
+        </tr>
+        <tr class="total"><td colspan="6">Total Amount</td><td>{{ totalAmount | number:'1.2-2' }} USD</td></tr>
+      </tbody>
+    </table>
+
+    <footer class="report-footer">
+      <div><b>Terms & Conditions</b><p>1. Payment within 30 days.</p><p>2. Quality as per sample.</p></div>
+      <div class="signature">Authorized Signature</div>
+    </footer>
+
+    <div class="page-no">Page 1 of 1</div>
+  </div>
+</section>

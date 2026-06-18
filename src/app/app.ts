@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
   standalone: true,
   selector: 'app-root',
-  imports: [RouterOutlet, ToastModule],
+  imports: [RouterOutlet, ToastModule, ConfirmDialogModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

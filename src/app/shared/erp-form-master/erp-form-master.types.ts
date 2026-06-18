@@ -9,6 +9,7 @@ export type ErpFieldType =
   | 'checkbox'
   | 'select'
   | 'searchSelect'
+  | 'multiSelect'
   | 'file'
   | 'hidden';
 
@@ -43,5 +44,7 @@ export interface ErpFormSection<TForm = any> {
   description?: string;
   icon?: string;
   columns?: number;
+  colSpan?: number;
+  layoutClass?: string;
   fields: ErpFormField<TForm>[];
 }

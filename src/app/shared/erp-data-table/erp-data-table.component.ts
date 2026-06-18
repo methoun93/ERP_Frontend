@@ -142,8 +142,17 @@ export class ErpDataTableComponent<T = any> implements OnChanges {
   }
 
   private readPath(row: any, path: string): any {
-    if (!path.includes('.')) return row[path];
-    return path.split('.').reduce((acc, part) => acc == null ? undefined : acc[part], row);
+    if (!path.includes('.')) {
+      if (row[path] !== undefined) return row[path];
+      const actualKey = Object.keys(row || {}).find(key => key.toLowerCase() === path.toLowerCase());
+      return actualKey ? row[actualKey] : undefined;
+    }
+    return path.split('.').reduce((acc, part) => {
+      if (acc == null) return undefined;
+      if (acc[part] !== undefined) return acc[part];
+      const actualKey = Object.keys(acc || {}).find(key => key.toLowerCase() === part.toLowerCase());
+      return actualKey ? acc[actualKey] : undefined;
+    }, row);
   }
 
   formatValue(value: any, type?: string): string {

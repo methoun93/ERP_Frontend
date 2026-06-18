@@ -1,0 +1,223 @@
+<section class="builder-page compact-builder">
+  <header class="builder-header">
+    <div>
+      <p class="eyebrow">Reporting</p>
+      <h1>Report Builder</h1>
+      <p>Drag, move, resize, delete and style printable report elements.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" (click)="printPreview()">Preview</button>
+      <button class="primary" type="button" (click)="saveLayout()">Save Template</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button [class.active]="activeTab === 'design'" (click)="activeTab = 'design'">Design</button>
+    <button [class.active]="activeTab === 'template'" (click)="activeTab = 'template'">Template</button>
+    <button [class.active]="activeTab === 'variant'" (click)="activeTab = 'variant'">Variant</button>
+    <button [class.active]="activeTab === 'parameter'" (click)="activeTab = 'parameter'">Parameter</button>
+    <button [class.active]="activeTab === 'theme'" (click)="activeTab = 'theme'">Theme</button>
+    <button [class.active]="activeTab === 'image'" (click)="activeTab = 'image'">Image</button>
+    <button [class.active]="activeTab === 'page'" (click)="activeTab = 'page'">Page Setup</button>
+  </div>
+
+  <div class="builder-grid designer-workspace" *ngIf="activeTab === 'design'">
+    <aside class="left-stack">
+      <section class="panel toolbox">
+        <h3>Toolbox</h3>
+        <p class="helper">Click to add, then drag on canvas.</p>
+        <button *ngFor="let tool of tools" type="button" (click)="addElement(tool.type)">
+          <span>{{ tool.icon }}</span>{{ tool.label }}
+        </button>
+      </section>
+
+      <section class="panel layers">
+        <div class="panel-title-row">
+          <h3>Layers</h3>
+          <small>{{ layout.elements.length }}</small>
+        </div>
+        <button
+          *ngFor="let element of layout.elements.slice().reverse(); trackBy: trackByElementId"
+          type="button"
+          class="layer-row"
+          [class.active]="selectedElement?.id === element.id"
+          (click)="selectElement(element)">
+          <span>{{ element.type }}</span>
+          {{ element.label }}
+        </button>
+      </section>
+    </aside>
+
+    <main class="canvas-wrap">
+      <div class="canvas-toolbar">
+        <input [(ngModel)]="reportNo" placeholder="Report No" />
+        <input [(ngModel)]="reportName" placeholder="Report Name" />
+        <input [(ngModel)]="reportKey" placeholder="Report Key" />
+        <div class="toolbar-buttons">
+          <label class="toolbar-check"><input type="checkbox" [(ngModel)]="showGrid" /> Grid</label>
+          <label class="toolbar-check"><input type="checkbox" [(ngModel)]="snapToGrid" /> Snap</label>
+          <button type="button" class="fit-btn" (click)="fitToScreen()">Fit</button>
+          <select [(ngModel)]="zoom">
+            <option [ngValue]="50">50%</option>
+            <option [ngValue]="60">60%</option>
+            <option [ngValue]="70">70%</option>
+            <option [ngValue]="80">80%</option>
+            <option [ngValue]="90">90%</option>
+            <option [ngValue]="100">100%</option>
+          </select>
+        </div>
+      </div>
+
+      <div #paperViewport class="paper-scroll">
+        <div class="paper-scale" [style.transform]="'scale(' + (zoom / 100) + ')'">
+          <div
+            #paperCanvas
+            class="paper"
+            [class.landscape]="layout.pageSettings.orientation === 'Landscape'"
+            [class.show-grid]="showGrid"
+            (click)="clearSelection()">
+            <div
+              *ngFor="let element of layout.elements; trackBy: trackByElementId"
+              class="element report-design-element"
+              [attr.data-element-id]="element.id"
+              [class.selected]="selectedElement?.id === element.id"
+              [class.table-element]="element.type === 'table'"
+              [class.rectangle-element]="element.type === 'rectangle'"
+              [class.line-element]="element.type === 'line'"
+              [class.page-break-element]="element.type === 'pageBreak'"
+              [style.left.px]="element.x"
+              [style.top.px]="element.y"
+              [style.width.px]="element.width"
+              [style.height.px]="element.height"
+              [style.z-index]="layout.elements.indexOf(element) + 1"
+              (click)="selectElement(element, $event)">
+
+              <button class="element-delete" type="button" title="Delete" *ngIf="selectedElement?.id === element.id" (click)="removeSelectedElement(); $event.stopPropagation()">×</button>
+              <span class="resize-hint" *ngIf="selectedElement?.id === element.id"></span>
+
+              <ng-container [ngSwitch]="element.type">
+                <div *ngSwitchCase="'image'" class="image-box">Image<br><small>{{ element.imageUrl || 'Image URL' }}</small></div>
+
+                <table *ngSwitchCase="'table'">
+                  <thead>
+                    <tr><th *ngFor="let col of element.columns" [style.width.px]="col.width">{{ col.caption }}</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td *ngFor="let col of element.columns">[{{ col.field }}]</td></tr>
+                    <tr><td *ngFor="let col of element.columns">Data</td></tr>
+                    <tr class="total"><td [attr.colspan]="element.columns?.length || 1">Total</td></tr>
+                  </tbody>
+                </table>
+
+                <div *ngSwitchCase="'line'" class="line"></div>
+                <div *ngSwitchCase="'rectangle'" class="rectangle-label">{{ element.text || element.label }}</div>
+                <div *ngSwitchCase="'barcode'" class="barcode-text">{{ element.text || '||||||||||||' }}</div>
+                <div *ngSwitchCase="'qr'" class="qr-box">QR</div>
+                <div *ngSwitchCase="'pageBreak'" class="page-break">PAGE BREAK</div>
+                <div *ngSwitchDefault>{{ element.text || element.label }}</div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="panel properties">
+      <h3>Properties</h3>
+      <ng-container *ngIf="selectedElement; else noSelection">
+        <div class="selected-title">
+          <strong>{{ selectedElement.label }}</strong>
+          <small>{{ selectedElement.type }}</small>
+        </div>
+
+        <div class="property-actions">
+          <button type="button" (click)="duplicateSelectedElement()">Duplicate</button>
+          <button type="button" (click)="bringForward()">Front</button>
+          <button type="button" (click)="sendBackward()">Back</button>
+          <button type="button" class="danger" (click)="removeSelectedElement()">Remove</button>
+        </div>
+
+        <label>Label<input [(ngModel)]="selectedElement.label" /></label>
+        <label *ngIf="selectedElement.type !== 'table' && selectedElement.type !== 'image'">Text<input [(ngModel)]="selectedElement.text" /></label>
+        <label *ngIf="selectedElement.type === 'field'">Field<input [(ngModel)]="selectedElement.field" (ngModelChange)="selectedElement.text = '[' + selectedElement.field + ']'" /></label>
+
+        <div class="two-col">
+          <label>X<input type="number" [(ngModel)]="selectedElement.x" /></label>
+          <label>Y<input type="number" [(ngModel)]="selectedElement.y" /></label>
+        </div>
+        <div class="two-col">
+          <label>Width<input type="number" [(ngModel)]="selectedElement.width" /></label>
+          <label>Height<input type="number" [(ngModel)]="selectedElement.height" /></label>
+        </div>
+
+        <label *ngIf="selectedElement.type === 'image'">Image Link<input [(ngModel)]="selectedElement.imageUrl" placeholder="/uploads/logo.png" /></label>
+
+        <div *ngIf="selectedElement.type === 'table'" class="column-list">
+          <div class="panel-title-row">
+            <h4>Table Columns</h4>
+            <button type="button" (click)="addTableColumn()">+ Column</button>
+          </div>
+          <div *ngFor="let col of selectedElement.columns; let i = index" class="column-row">
+            <input [(ngModel)]="col.caption" placeholder="Caption" />
+            <input [(ngModel)]="col.field" placeholder="Field" />
+            <input type="number" [(ngModel)]="col.width" placeholder="Width" />
+            <button type="button" class="icon-danger" (click)="removeTableColumn(i)">×</button>
+          </div>
+        </div>
+
+        <div class="shortcut-note">
+          <strong>Shortcuts:</strong> Delete = remove, Ctrl+D = duplicate.
+        </div>
+      </ng-container>
+      <ng-template #noSelection>
+        <p class="muted">Select an element from canvas.</p>
+        <p class="muted small">Click a toolbox item, then drag or resize it on the page.</p>
+      </ng-template>
+    </aside>
+  </div>
+
+  <div class="settings-card" *ngIf="activeTab === 'template'">
+    <h2>Template Manager</h2>
+    <table><tr><th>Template</th><th>Scope</th><th>Default</th></tr><tr *ngFor="let row of templates"><td>{{ row.templateName }}</td><td>{{ row.scope }}</td><td>{{ row.isDefault ? 'Yes' : 'No' }}</td></tr></table>
+  </div>
+
+  <div class="settings-card" *ngIf="activeTab === 'variant'">
+    <h2>Variant Manager</h2>
+    <table><tr><th>Variant Code</th><th>Variant Name</th><th>Default</th></tr><tr *ngFor="let row of variants"><td>{{ row.variantCode }}</td><td>{{ row.variantName }}</td><td>{{ row.isDefault ? 'Yes' : 'No' }}</td></tr></table>
+  </div>
+
+  <div class="settings-card" *ngIf="activeTab === 'parameter'">
+    <h2>Parameter Designer</h2>
+    <table><tr><th>Parameter</th><th>Display</th><th>Data Type</th><th>Control</th><th>Required</th></tr><tr *ngFor="let row of parameters"><td>{{ row.parameterName }}</td><td>{{ row.displayName }}</td><td>{{ row.dataType }}</td><td>{{ row.controlType }}</td><td>{{ row.isRequired ? 'Yes' : 'No' }}</td></tr></table>
+  </div>
+
+  <div class="settings-card form-grid" *ngIf="activeTab === 'theme'">
+    <h2>Theme / Style Designer</h2>
+    <label>Primary Color<input type="color" [(ngModel)]="layout.theme.primaryColor" /></label>
+    <label>Header Background<input type="color" [(ngModel)]="layout.theme.headerBackground" /></label>
+    <label>Header Text Color<input type="color" [(ngModel)]="layout.theme.headerTextColor" /></label>
+    <label>Border Color<input type="color" [(ngModel)]="layout.theme.borderColor" /></label>
+    <label>Text Color<input type="color" [(ngModel)]="layout.theme.textColor" /></label>
+  </div>
+
+  <div class="settings-card form-grid" *ngIf="activeTab === 'image'">
+    <h2>Image Manager</h2>
+    <label>Company Logo URL<input value="/uploads/company/logo.png" /></label>
+    <label>Signature URL<input value="/uploads/users/signature/admin.png" /></label>
+    <label>Watermark URL<input value="/uploads/company/watermark.png" /></label>
+    <label>Stamp URL<input value="/uploads/company/stamp.png" /></label>
+  </div>
+
+  <div class="settings-card form-grid" *ngIf="activeTab === 'page'">
+    <h2>Page Settings</h2>
+    <label>Paper Size<select [(ngModel)]="layout.pageSettings.pageSize"><option>A4</option><option>A5</option><option>Letter</option><option>Legal</option></select></label>
+    <label>Orientation<select [(ngModel)]="layout.pageSettings.orientation"><option>Portrait</option><option>Landscape</option></select></label>
+    <label>Top Margin<input type="number" [(ngModel)]="layout.pageSettings.marginTop" /></label>
+    <label>Right Margin<input type="number" [(ngModel)]="layout.pageSettings.marginRight" /></label>
+    <label>Bottom Margin<input type="number" [(ngModel)]="layout.pageSettings.marginBottom" /></label>
+    <label>Left Margin<input type="number" [(ngModel)]="layout.pageSettings.marginLeft" /></label>
+    <label class="check"><input type="checkbox" [(ngModel)]="layout.pageSettings.showPageNo" /> Show Page No</label>
+    <label class="check"><input type="checkbox" [(ngModel)]="layout.pageSettings.showPrintDate" /> Show Print Date</label>
+    <label class="check"><input type="checkbox" [(ngModel)]="layout.pageSettings.repeatHeader" /> Repeat Header</label>
+  </div>
+</section>
