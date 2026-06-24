@@ -19,12 +19,6 @@ export class ReportLibrary implements OnInit {
   moduleFilter = 'All';
   reports: RptReport[] = [];
 
-  fallbackReports: RptReport[] = [
-    { id: 'demo-po', reportNo: 'MER-RPT-000001', reportKey: 'PO_PRINT', reportName: 'Purchase Order Print', moduleName: 'Merchandising', procedureName: 'rpt_Merchandising_OrderPrint', reportType: 'LAYOUT', isActive: true },
-    { id: 'demo-invoice', reportNo: 'COM-RPT-000001', reportKey: 'COMMERCIAL_INVOICE', reportName: 'Commercial Invoice', moduleName: 'Commercial', procedureName: 'rpt_Commercial_Invoice', reportType: 'LAYOUT', isActive: true },
-    { id: 'demo-stock', reportNo: 'INV-RPT-000001', reportKey: 'STOCK_POSITION', reportName: 'Stock Position', moduleName: 'Inventory', procedureName: 'rpt_Stock_Position', reportType: 'GRID', isActive: true }
-  ];
-
   constructor(private readonly api: ReportingApiService, private readonly router: Router) {}
 
   ngOnInit(): void {
@@ -58,7 +52,7 @@ export class ReportLibrary implements OnInit {
       },
       error: err => {
         this.error = err?.message || 'Could not load reports.';
-        this.reports = this.fallbackReports;
+        this.reports = [];
         this.loading = false;
       }
     });
@@ -69,7 +63,25 @@ export class ReportLibrary implements OnInit {
     this.router.navigate(url);
   }
 
+  cloneReport(report: RptReport): void {
+    if (!report.id) return;
+    if (!confirm(`Clone report ${report.reportNo || report.reportName}?`)) return;
+
+    this.api.cloneReport(report.id).subscribe({
+      next: result => {
+        this.router.navigate(['/erp/reporting/builder', result.reportId]);
+      },
+      error: err => {
+        this.error = err?.message || 'Could not clone report.';
+      }
+    });
+  }
+
   openPreview(report: RptReport): void {
-    this.router.navigate(['/erp/reporting/preview'], { queryParams: { reportId: report.id, reportKey: report.reportKey } });
+    this.router.navigate(['/erp/reporting/preview'], { queryParams: { reportId: report.id || '', reportNo: report.reportNo || '', reportKey: report.reportKey || '', variantCode: 'DEFAULT' } });
+  }
+
+  printReport(report: RptReport): void {
+    this.router.navigate(['/erp/reporting/preview'], { queryParams: { reportId: report.id || '', reportNo: report.reportNo || '', reportKey: report.reportKey || '', variantCode: 'DEFAULT', autoPrint: '1' } });
   }
 }

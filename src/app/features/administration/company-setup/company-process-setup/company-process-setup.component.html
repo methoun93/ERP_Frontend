@@ -1,0 +1,154 @@
+<section class="process-setup-page">
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+
+  <div class="setup-grid">
+    <aside class="panel module-panel">
+      <div class="panel-header compact">
+        <div>
+          <h2>Modules</h2>
+          <p>Select a module to configure processes.</p>
+        </div>
+        <button type="button" class="icon-button" (click)="loadModules()" [disabled]="loadingModules" title="Refresh">
+          <i class="pi pi-refresh"></i>
+        </button>
+      </div>
+
+      <input class="search-input" type="text" placeholder="Search module" [(ngModel)]="searchTerm" />
+
+      <div *ngIf="loadingModules" class="empty-box">Loading modules...</div>
+      <div *ngIf="!loadingModules && !filteredModules.length" class="empty-box">No module found.</div>
+
+      <button
+        type="button"
+        class="module-item"
+        *ngFor="let module of filteredModules; trackBy: trackByModule"
+        [class.active]="selectedModule?.moduleId === module.moduleId"
+        (click)="selectModule(module)">
+        <span class="module-avatar">{{ module.moduleName?.charAt(0) || 'M' }}</span>
+        <span class="module-text">
+          <strong>{{ module.moduleName }}</strong>
+          <small>{{ module.enabledProcesses || 0 }} enabled / {{ module.totalProcesses || 0 }} total</small>
+        </span>
+        <span class="status-pill" [class.configured]="module.isConfigured">
+          {{ module.isConfigured ? 'Configured' : 'Not configured' }}
+        </span>
+      </button>
+    </aside>
+
+    <section class="panel content-panel">
+      <div class="panel-header">
+        <div>
+          <h2>{{ selectedModule?.moduleName || 'Module' }} Process Setup</h2>
+          <p>Enable processes, required rules, order and auto create behavior.</p>
+        </div>
+        <button type="button" class="primary-button" (click)="save()" [disabled]="!canSave">
+          {{ saving ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+
+      <div *ngIf="loadingSetup" class="empty-large">Loading setup...</div>
+
+      <div *ngIf="!loadingSetup && setup && !orderedProcesses.length" class="empty-large">
+        No process has been defined for this module. Add module processes first.
+      </div>
+
+      <div *ngIf="!loadingSetup && setup && orderedProcesses.length" class="process-table-wrap">
+        <table class="process-table">
+          <thead>
+            <tr>
+              <th style="width: 54px;">#</th>
+              <th>Process</th>
+              <th style="width: 130px;">Enabled</th>
+              <th style="width: 130px;">Required</th>
+              <th style="width: 170px;">Auto create</th>
+              <th style="width: 110px;">Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let process of orderedProcesses; let i = index; trackBy: trackByProcess" [class.disabled]="!process.isEnabled">
+              <td>{{ i + 1 }}</td>
+              <td>
+                <div class="process-name">
+                  <strong>{{ process.processName }}</strong>
+                  <small>{{ process.processKey }}</small>
+                </div>
+              </td>
+              <td>
+                <button type="button" class="switch" [class.on]="process.isEnabled" (click)="toggleProcess(process)">
+                  <span></span>
+                </button>
+              </td>
+              <td>
+                <input type="checkbox" [checked]="process.isRequired" [disabled]="!process.isEnabled" (change)="toggleRequired(process)" />
+              </td>
+              <td>
+                <select [(ngModel)]="process.autoCreateType" [disabled]="!process.isEnabled">
+                  <option *ngFor="let option of autoCreateOptions" [ngValue]="option.value">{{ option.label }}</option>
+                </select>
+              </td>
+              <td>
+                <div class="order-buttons">
+                  <button type="button" (click)="moveProcess(process, -1)" [disabled]="i === 0" title="Move up"><i class="pi pi-angle-up"></i></button>
+                  <button type="button" (click)="moveProcess(process, 1)" [disabled]="i === orderedProcesses.length - 1" title="Move down"><i class="pi pi-angle-down"></i></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section *ngIf="setup && enabledProcesses.length > 1" class="auto-rules-panel">
+        <div class="sub-header">
+          <div>
+            <h3>Auto Create Rules</h3>
+            <p>Use this when one enabled process should be created automatically after another process is skipped.</p>
+          </div>
+          <button type="button" class="secondary-button" (click)="addAutoRule()">
+            <i class="pi pi-plus"></i> Add Rule
+          </button>
+        </div>
+
+        <div *ngIf="!setup.autoRules.length" class="empty-rule">No auto create rule added.</div>
+
+        <div class="rule-row" *ngFor="let rule of setup.autoRules; let i = index; trackBy: trackByRule">
+          <label>
+            <span>If skipped</span>
+            <select [(ngModel)]="rule.skipProcessId">
+              <option *ngFor="let process of enabledProcesses" [value]="process.processId">{{ process.processName }}</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Auto create</span>
+            <select [(ngModel)]="rule.autoCreateProcessId">
+              <option *ngFor="let process of enabledProcesses" [value]="process.processId">{{ process.processName }}</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Create as</span>
+            <select [(ngModel)]="rule.createAs">
+              <option *ngFor="let option of createAsOptions" [ngValue]="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Copy data</span>
+            <select [(ngModel)]="rule.copyDataFrom">
+              <option *ngFor="let option of copyFromOptions" [ngValue]="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="rule.isActive" /> Active
+          </label>
+
+          <button type="button" class="delete-button" (click)="removeAutoRule(i)" title="Delete">
+            <i class="pi pi-trash"></i>
+          </button>
+        </div>
+      </section>
+    </section>
+  </div>
+</section>

@@ -1,55 +1,65 @@
-<section class="report-page">
-  <div class="page-header">
+<section class="report-library-page">
+  <div class="library-hero">
     <div>
-      <p class="eyebrow">Reporting</p>
+      <p class="eyebrow">Reporting Studio</p>
       <h1>Report Library</h1>
-      <p class="subtitle">Manage module-wise printable reports, report variants and templates.</p>
+      <p class="subtitle">Design, preview, clone and print module-wise reports from one professional workspace.</p>
     </div>
     <button class="primary-btn" type="button" (click)="openBuilder()">+ New Report</button>
   </div>
 
-  <div class="toolbar-card">
-    <input type="search" [(ngModel)]="searchText" placeholder="Search report no, name, key or SP..." />
-    <select [(ngModel)]="moduleFilter">
-      <option *ngFor="let module of modules" [value]="module">{{ module }}</option>
-    </select>
-    <button type="button" (click)="loadReports()">Refresh</button>
+  <div class="library-filter-card">
+    <div class="search-box">
+      <span>Search</span>
+      <input type="search" [(ngModel)]="searchText" placeholder="Report no, name, key or stored procedure..." />
+    </div>
+    <div class="filter-box">
+      <span>Module</span>
+      <select [(ngModel)]="moduleFilter">
+        <option *ngFor="let module of modules" [value]="module">{{ module }}</option>
+      </select>
+    </div>
+    <button type="button" class="ghost-btn" (click)="loadReports()">Refresh</button>
   </div>
 
-  <div *ngIf="error" class="alert">{{ error }} Demo data is shown until backend endpoint is available.</div>
+  <div *ngIf="error" class="alert">{{ error }}</div>
 
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Report No</th>
-          <th>Report Name</th>
-          <th>Module</th>
-          <th>Report Key</th>
-          <th>SP Name</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th class="text-right">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let report of filteredReports">
-          <td class="strong">{{ report.reportNo || '-' }}</td>
-          <td>{{ report.reportName }}</td>
-          <td>{{ report.moduleName || 'General' }}</td>
-          <td><span class="code">{{ report.reportKey }}</span></td>
-          <td><span class="code">{{ report.procedureName }}</span></td>
-          <td><span class="badge">{{ report.reportType }}</span></td>
-          <td><span class="status" [class.off]="report.isActive === false">{{ report.isActive === false ? 'Inactive' : 'Active' }}</span></td>
-          <td class="text-right">
-            <button type="button" class="link-btn" (click)="openPreview(report)">Preview</button>
-            <button type="button" class="link-btn" (click)="openBuilder(report)">Design</button>
-          </td>
-        </tr>
-        <tr *ngIf="!filteredReports.length && !loading">
-          <td colspan="8" class="empty">No reports found. Create report master data in Rpt_Reports first.</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="report-card-grid" *ngIf="filteredReports.length; else emptyState">
+    <article class="report-card" *ngFor="let report of filteredReports">
+      <div class="card-topline">
+        <span class="module-pill">{{ report.moduleName || 'General' }}</span>
+        <span class="status-pill" [class.off]="report.isActive === false">{{ report.isActive === false ? 'Inactive' : 'Active' }}</span>
+      </div>
+
+      <div class="card-main">
+        <div class="report-icon">R</div>
+        <div>
+          <h2>{{ report.reportName }}</h2>
+          <p class="report-no">{{ report.reportNo || '-' }}</p>
+        </div>
+      </div>
+
+      <dl class="report-meta">
+        <div><dt>Report Key</dt><dd>{{ report.reportKey }}</dd></div>
+        <div><dt>SP Name</dt><dd>{{ report.procedureName }}</dd></div>
+        <div><dt>Type</dt><dd>{{ report.reportType }}</dd></div>
+      </dl>
+
+      <div class="card-actions">
+        <button type="button" class="action preview" (click)="openPreview(report)">Preview</button>
+        <button type="button" class="action print" (click)="printReport(report)">Print</button>
+        <button type="button" class="action edit" (click)="openBuilder(report)">Design</button>
+        <button type="button" class="action clone" (click)="cloneReport(report)">Clone</button>
+      </div>
+    </article>
   </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state" *ngIf="!loading">
+      <div class="empty-icon">R</div>
+      <h2>No reports found</h2>
+      <p>Create your first report master, select stored procedure fields, then save a printable template.</p>
+      <button class="primary-btn" type="button" (click)="openBuilder()">Create Report</button>
+    </div>
+  </ng-template>
 </section>

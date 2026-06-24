@@ -1,4 +1,21 @@
 export type ReportType = 'GRID' | 'LAYOUT' | 'PIVOT' | 'CHART' | 'DASHBOARD' | 'MASTER_DETAIL';
+export type ReportElementType =
+  | 'text'
+  | 'field'
+  | 'image'
+  | 'table'
+  | 'line'
+  | 'rectangle'
+  | 'barcode'
+  | 'qr'
+  | 'pageBreak'
+  | 'pageHeader'
+  | 'pageFooter'
+  | 'groupHeader'
+  | 'groupFooter'
+  | 'pageNumber'
+  | 'printDate'
+  | 'printedBy';
 
 export interface RptReport {
   id?: string;
@@ -45,19 +62,13 @@ export interface RptReportParameter {
   sortOrder?: number;
 }
 
-export interface ReportElement {
-  id: string;
-  type: 'text' | 'field' | 'image' | 'table' | 'line' | 'rectangle' | 'barcode' | 'qr' | 'pageBreak';
-  label: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  field?: string;
-  text?: string;
-  imageUrl?: string;
-  style?: Record<string, string | number | boolean>;
-  columns?: ReportTableColumn[];
+export interface ReportConditionalRule {
+  field: string;
+  operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains';
+  value: string | number | boolean;
+  background?: string;
+  color?: string;
+  fontWeight?: number;
 }
 
 export interface ReportTableColumn {
@@ -66,9 +77,30 @@ export interface ReportTableColumn {
   width?: number;
   align?: 'left' | 'center' | 'right';
   aggregate?: 'sum' | 'count' | 'avg' | 'min' | 'max' | '';
+  format?: string;
+  visible?: boolean;
+}
+
+export interface ReportElement {
+  id: string;
+  type: ReportElementType;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  field?: string;
+  text?: string;
+  imageUrl?: string;
+  groupBy?: string;
+  section?: 'reportHeader' | 'pageHeader' | 'details' | 'body' | 'groupHeader' | 'groupFooter' | 'reportFooter' | 'pageFooter';
+  style?: Record<string, string | number | boolean>;
+  columns?: ReportTableColumn[];
+  conditions?: ReportConditionalRule[];
 }
 
 export interface ReportLayout {
+  version: number;
   pageSettings: {
     pageSize: 'A4' | 'A5' | 'Letter' | 'Legal';
     orientation: 'Portrait' | 'Landscape';
@@ -78,7 +110,10 @@ export interface ReportLayout {
     marginLeft: number;
     showPageNo: boolean;
     showPrintDate: boolean;
+    showPrintedBy: boolean;
     repeatHeader: boolean;
+    pageBreakAfterGroup: boolean;
+    keepRowTogether: boolean;
   };
   theme: {
     primaryColor: string;
@@ -86,6 +121,14 @@ export interface ReportLayout {
     headerTextColor: string;
     borderColor: string;
     textColor: string;
+    tableAltRowBackground: string;
+    groupHeaderBackground: string;
+    totalBackground: string;
+  };
+  dataSource: {
+    procedureName: string;
+    fields: string[];
+    groupBy?: string;
   };
   elements: ReportElement[];
 }
@@ -104,4 +147,44 @@ export interface RenderReportResponse {
   template?: RptReportTemplate;
   layout?: ReportLayout;
   data?: Record<string, unknown>[];
+}
+
+export interface ReportLookupOption {
+  id: string;
+  name: string;
+}
+
+export interface ProcedureParameterMeta {
+  parameterName: string;
+  displayName: string;
+  dataType: string;
+  controlType: string;
+  isRequired: boolean;
+  defaultValue?: string | null;
+  sortOrder: number;
+}
+
+export interface SaveReportDesignerRequest {
+  reportId?: string | null;
+  reportNo?: string | null;
+  reportKey: string;
+  reportName: string;
+  moduleId?: string | null;
+  procedureName: string;
+  reportType: string;
+  selectedVariantCode?: string | null;
+  layoutJson: string;
+  variants: RptReportVariant[];
+  parameters: RptReportParameter[];
+  templates: (RptReportTemplate & { variantCode?: string | null })[];
+}
+
+export interface SaveReportDesignerResponse {
+  reportId: string;
+  variantId: string;
+  templateId: string;
+  reportNo?: string | null;
+  reportKey: string;
+  variantCode: string;
+  templateName: string;
 }

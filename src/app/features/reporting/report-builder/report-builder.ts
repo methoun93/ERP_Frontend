@@ -1,18 +1,25 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import interact from 'interactjs';
-import { ReportElement, ReportLayout } from '../models/reporting.models';
+import { ActivatedRoute } from '@angular/router';
+import { catchError, of } from 'rxjs';
+import { ReportingApiService } from '../services/reporting-api.service';
+import { ReportElement, ReportLayout, ReportTableColumn } from '../models/reporting.models';
 
-type BuilderTab = 'design' | 'template' | 'variant' | 'parameter' | 'theme' | 'image' | 'page';
+type SectionKey = 'reportHeader' | 'pageHeader' | 'details' | 'groupFooter' | 'reportFooter' | 'pageFooter';
+type BuilderTool = 'pointer' | 'text' | 'field' | 'line' | 'rectangle' | 'image' | 'barcode' | 'table';
 
-type ToolDefinition = {
-  type: ReportElement['type'];
-  label: string;
-  icon: string;
-  defaultWidth?: number;
-  defaultHeight?: number;
-};
+interface DesignerElement extends ReportElement {
+  band: SectionKey;
+  style: Record<string, any>;
+}
+
+interface BandDef {
+  key: SectionKey;
+  title: string;
+  top: number;
+  height: number;
+}
 
 @Component({
   selector: 'app-report-builder',
@@ -21,375 +28,287 @@ type ToolDefinition = {
   templateUrl: './report-builder.html',
   styleUrls: ['./report-builder.scss']
 })
-export class ReportBuilder implements AfterViewInit, OnDestroy {
-  @ViewChild('paperCanvas') paperCanvas?: ElementRef<HTMLDivElement>;
-  @ViewChild('paperViewport') paperViewport?: ElementRef<HTMLDivElement>;
+export class ReportBuilder implements OnInit {
+  reportId = '';
+  reportName = 'New Report';
+  procedureName = 'sp_SalesSummary';
+  activeTab: 'design' | 'format' | 'pageSetup' = 'design';
+  selectedTool: BuilderTool = 'pointer';
+  zoom = 100;
 
-  activeTab: BuilderTab = 'design';
-  selectedElement?: ReportElement;
-  reportName = 'Purchase Order Print';
-  reportNo = 'MER-RPT-000001';
-  reportKey = 'PO_PRINT';
-  procedureName = 'rpt_Merchandising_OrderPrint';
-  showGrid = true;
-  snapToGrid = true;
-  gridSize = 10;
-  zoom = 70;
+  availableFields: string[] = [];
+  selectedFields: string[] = [];
+  searchText = '';
+  isLoadingFields = false;
+  statusMessage = '';
 
-  layout: ReportLayout = {
-    pageSettings: {
-      pageSize: 'A4',
-      orientation: 'Portrait',
-      marginTop: 12,
-      marginRight: 12,
-      marginBottom: 12,
-      marginLeft: 12,
-      showPageNo: true,
-      showPrintDate: true,
-      repeatHeader: true
-    },
-    theme: {
-      primaryColor: '#0f766e',
-      headerBackground: '#0f3b75',
-      headerTextColor: '#ffffff',
-      borderColor: '#cbd5e1',
-      textColor: '#111827'
-    },
-    elements: [
-      { id: 'txt-company', type: 'text', label: 'Company Name', text: 'Company Name', x: 240, y: 24, width: 260, height: 28, style: { fontSize: 20, fontWeight: 800 } },
-      { id: 'txt-title', type: 'text', label: 'Report Title', text: 'PURCHASE ORDER', x: 255, y: 78, width: 230, height: 26, style: { fontSize: 18, fontWeight: 800 } },
-      { id: 'img-logo', type: 'image', label: 'Logo', imageUrl: '/assets/logo.png', x: 52, y: 26, width: 72, height: 58 },
-      {
-        id: 'tbl-main', type: 'table', label: 'Main Table', x: 48, y: 210, width: 660, height: 160, columns: [
-          { field: 'ItemCode', caption: 'Item Code', width: 90 },
-          { field: 'ItemDescription', caption: 'Item Description', width: 190 },
-          { field: 'Uom', caption: 'UOM', width: 70, align: 'center' },
-          { field: 'Qty', caption: 'Qty', width: 80, align: 'right', aggregate: 'sum' },
-          { field: 'Rate', caption: 'Rate', width: 80, align: 'right' },
-          { field: 'Amount', caption: 'Amount', width: 100, align: 'right', aggregate: 'sum' }
-        ]
-      },
-      { id: 'txt-signature', type: 'text', label: 'Signature', text: 'Authorized Signature', x: 560, y: 455, width: 150, height: 24 }
-    ]
+  elements: DesignerElement[] = [];
+  selectedElement?: DesignerElement;
+  previewRows: Record<string, any>[] = [];
+  showPreview = true;
+
+  private dragStart?: { id: string; x: number; y: number; elementX: number; elementY: number };
+  private resizeStart?: { id: string; x: number; y: number; width: number; height: number };
+
+  bands: BandDef[] = [
+    { key: 'reportHeader', title: 'Report Header', top: 0, height: 90 },
+    { key: 'pageHeader', title: 'Page Header', top: 90, height: 70 },
+    { key: 'details', title: 'Details', top: 160, height: 80 },
+    { key: 'groupFooter', title: 'Group Footer', top: 240, height: 55 },
+    { key: 'reportFooter', title: 'Report Footer', top: 295, height: 55 },
+    { key: 'pageFooter', title: 'Page Footer', top: 350, height: 70 }
+  ];
+
+  readonly commonStoredProcedures = [
+    'sp_SalesSummary',
+    'rpt_Administration_UserRoleReport',
+    'sp_PurchaseSummary',
+    'sp_StockLedger',
+    'sp_CustomerLedger'
+  ];
+
+  private readonly fallbackFieldMap: Record<string, string[]> = {
+    sp_SalesSummary: ['InvoiceNo', 'SaleDate', 'CustomerName', 'ProductName', 'Quantity', 'UnitPrice', 'Discount', 'TotalAmount'],
+    rpt_Administration_UserRoleReport: ['Username', 'EmpId', 'Email', 'RoleName', 'AreaName', 'StatusName'],
+    sp_PurchaseSummary: ['PurchaseNo', 'PurchaseDate', 'SupplierName', 'ItemName', 'Quantity', 'Rate', 'Amount'],
+    sp_StockLedger: ['TranDate', 'ItemName', 'OpeningQty', 'ReceiveQty', 'IssueQty', 'ClosingQty'],
+    sp_CustomerLedger: ['TranDate', 'VoucherNo', 'CustomerName', 'Debit', 'Credit', 'Balance']
   };
 
-  tools: ToolDefinition[] = [
-    { type: 'text', label: 'Text', icon: 'T', defaultWidth: 160, defaultHeight: 34 },
-    { type: 'field', label: 'Field', icon: '{}', defaultWidth: 170, defaultHeight: 34 },
-    { type: 'image', label: 'Image', icon: '▧', defaultWidth: 110, defaultHeight: 80 },
-    { type: 'table', label: 'Table', icon: '▦', defaultWidth: 560, defaultHeight: 150 },
-    { type: 'line', label: 'Line', icon: '─', defaultWidth: 220, defaultHeight: 12 },
-    { type: 'rectangle', label: 'Rectangle', icon: '▭', defaultWidth: 190, defaultHeight: 80 },
-    { type: 'barcode', label: 'Barcode', icon: '▥', defaultWidth: 190, defaultHeight: 55 },
-    { type: 'qr', label: 'QR Code', icon: '▣', defaultWidth: 90, defaultHeight: 90 },
-    { type: 'pageBreak', label: 'Page Break', icon: '↧', defaultWidth: 680, defaultHeight: 28 }
-  ];
+  layout: ReportLayout = {
+    version: 2,
+    pageSettings: {
+      pageSize: 'A4', orientation: 'Portrait', marginTop: 12, marginRight: 12, marginBottom: 12, marginLeft: 12,
+      showPageNo: true, showPrintDate: true, showPrintedBy: true, repeatHeader: true, pageBreakAfterGroup: false, keepRowTogether: true
+    },
+    theme: {
+      primaryColor: '#0d6efd', headerBackground: '#003b75', headerTextColor: '#ffffff', borderColor: '#cbd5e1',
+      textColor: '#111827', tableAltRowBackground: '#f8fafc', groupHeaderBackground: '#e0f2fe', totalBackground: '#e2e8f0'
+    },
+    dataSource: { procedureName: this.procedureName, fields: [], groupBy: '' },
+    elements: []
+  };
 
-  parameters = [
-    { parameterName: 'orderId', displayName: 'Order ID', dataType: 'Guid', controlType: 'Hidden', isRequired: true },
-    { parameterName: 'buyerId', displayName: 'Buyer', dataType: 'Guid', controlType: 'Dropdown', isRequired: false },
-    { parameterName: 'fromDate', displayName: 'From Date', dataType: 'Date', controlType: 'Date', isRequired: false },
-    { parameterName: 'toDate', displayName: 'To Date', dataType: 'Date', controlType: 'Date', isRequired: false }
-  ];
+  constructor(private readonly reportingApi: ReportingApiService, private readonly route: ActivatedRoute) {}
 
-  variants = [
-    { variantCode: 'DEFAULT', variantName: 'Default', isDefault: true },
-    { variantCode: 'BUYER_COPY', variantName: 'Buyer Copy', isDefault: false },
-    { variantCode: 'FACTORY_COPY', variantName: 'Factory Copy', isDefault: false }
-  ];
-
-  templates = [
-    { templateName: 'Default Template', scope: 'All Company', isDefault: true },
-    { templateName: 'Company A Template', scope: 'Company', isDefault: false },
-    { templateName: 'Gazipur Area Template', scope: 'Area', isDefault: false }
-  ];
-
-  ngAfterViewInit(): void {
-    this.enableDesignerInteractions();
-    setTimeout(() => this.fitToScreen());
+  ngOnInit(): void {
+    this.reportId = this.route.snapshot.paramMap.get('id') || this.route.snapshot.queryParamMap.get('id') || '';
+    this.loadFields();
   }
 
-  ngOnDestroy(): void {
-    interact('.report-design-element').unset();
+  get filteredFields(): string[] {
+    const q = this.searchText.trim().toLowerCase();
+    return q ? this.availableFields.filter(x => x.toLowerCase().includes(q)) : this.availableFields;
   }
 
-  @HostListener('window:resize')
-  onWindowResize(): void {
-    this.fitToScreen();
+  get pageWidth(): number { return this.layout.pageSettings.orientation === 'Landscape' ? 1123 : 794; }
+  get pageHeight(): number { return this.layout.pageSettings.orientation === 'Landscape' ? 794 : 1123; }
+  get canvasHeight(): number { return this.bands[this.bands.length - 1].top + this.bands[this.bands.length - 1].height; }
+
+  setProcedure(value: string): void {
+    this.procedureName = value;
+    this.layout.dataSource.procedureName = value;
   }
 
-  @HostListener('document:keydown', ['$event'])
-  handleKeyboard(event: KeyboardEvent): void {
-    const target = event.target as HTMLElement | null;
-    const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.tagName === 'SELECT';
-    if (isInput) return;
-
-    if ((event.key === 'Delete' || event.key === 'Backspace') && this.selectedElement) {
-      event.preventDefault();
-      this.removeSelectedElement();
-    }
-
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd' && this.selectedElement) {
-      event.preventDefault();
-      this.duplicateSelectedElement();
-    }
-  }
-
-  addElement(type: ReportElement['type']): void {
-    const tool = this.tools.find(x => x.type === type);
-    const id = `${type}-${Date.now()}`;
-    const element: ReportElement = {
-      id,
-      type,
-      label: this.toTitle(type),
-      text: this.defaultText(type),
-      x: 80,
-      y: 120,
-      width: tool?.defaultWidth ?? 160,
-      height: tool?.defaultHeight ?? 34,
-      style: { fontSize: 13, fontWeight: 600 }
-    };
-
-    if (type === 'field') {
-      element.field = 'FieldName';
-      element.text = '[FieldName]';
-    }
-
-    if (type === 'image') element.imageUrl = '/uploads/company/logo.png';
-
-    if (type === 'table') {
-      element.columns = [
-        { field: 'ItemCode', caption: 'Item Code', width: 120 },
-        { field: 'ItemDescription', caption: 'Item Description', width: 220 },
-        { field: 'Qty', caption: 'Qty', width: 90, align: 'right' }
-      ];
-    }
-
-    this.layout.elements.push(element);
-    this.selectedElement = element;
-    this.refreshDesignerInteractions();
-  }
-
-  selectElement(element: ReportElement, event?: MouseEvent): void {
-    event?.stopPropagation();
-    this.selectedElement = element;
-  }
-
-  clearSelection(): void {
-    this.selectedElement = undefined;
-  }
-
-  removeSelectedElement(): void {
-    if (!this.selectedElement) return;
-    this.layout.elements = this.layout.elements.filter(x => x.id !== this.selectedElement?.id);
-    this.selectedElement = undefined;
-    this.refreshDesignerInteractions();
-  }
-
-  duplicateSelectedElement(): void {
-    if (!this.selectedElement) return;
-    const source = this.selectedElement;
-    const copy: ReportElement = JSON.parse(JSON.stringify(source));
-    copy.id = `${source.type}-${Date.now()}`;
-    copy.label = `${source.label} Copy`;
-    copy.x = this.snap(source.x + 24);
-    copy.y = this.snap(source.y + 24);
-    this.layout.elements.push(copy);
-    this.selectedElement = copy;
-    this.refreshDesignerInteractions();
-  }
-
-  bringForward(): void {
-    if (!this.selectedElement) return;
-    const index = this.layout.elements.findIndex(x => x.id === this.selectedElement?.id);
-    if (index < 0 || index === this.layout.elements.length - 1) return;
-    const [element] = this.layout.elements.splice(index, 1);
-    this.layout.elements.splice(index + 1, 0, element);
-  }
-
-  sendBackward(): void {
-    if (!this.selectedElement) return;
-    const index = this.layout.elements.findIndex(x => x.id === this.selectedElement?.id);
-    if (index <= 0) return;
-    const [element] = this.layout.elements.splice(index, 1);
-    this.layout.elements.splice(index - 1, 0, element);
-  }
-
-  addTableColumn(): void {
-    if (!this.selectedElement || this.selectedElement.type !== 'table') return;
-    this.selectedElement.columns ??= [];
-    const next = this.selectedElement.columns.length + 1;
-    this.selectedElement.columns.push({ field: `Field${next}`, caption: `Column ${next}`, width: 120 });
-  }
-
-  removeTableColumn(index: number): void {
-    if (!this.selectedElement?.columns) return;
-    this.selectedElement.columns.splice(index, 1);
-  }
-
-
-  fitToScreen(): void {
-    const viewport = this.paperViewport?.nativeElement;
-    if (!viewport) return;
-
-    const isLandscape = this.layout.pageSettings.orientation === 'Landscape';
-    const paperWidth = isLandscape ? 1123 : 794;
-    const paperHeight = isLandscape ? 794 : 1123;
-    const availableWidth = Math.max(320, viewport.clientWidth - 32);
-    const availableHeight = Math.max(320, viewport.clientHeight - 32);
-    const widthZoom = (availableWidth / paperWidth) * 100;
-    const heightZoom = (availableHeight / paperHeight) * 100;
-    this.zoom = Math.max(45, Math.min(100, Math.floor(Math.min(widthZoom, heightZoom))));
-  }
-
-  saveLayout(): void {
-    const json = JSON.stringify(this.layout, null, 2);
-    console.log('LayoutJson', json);
-    alert('Layout JSON generated. Connect this save action with Rpt_ReportTemplates API.');
-  }
-
-  printPreview(): void {
-    if (!this.paperCanvas?.nativeElement) return;
-
-    const paper = this.paperCanvas.nativeElement.cloneNode(true) as HTMLElement;
-    paper.classList.remove('show-grid');
-    paper.querySelectorAll('.element-delete, .resize-hint').forEach(x => x.remove());
-    paper.querySelectorAll('.selected').forEach(x => x.classList.remove('selected'));
-
-    const preview = window.open('', '_blank', 'width=1100,height=800');
-    if (!preview) {
-      alert('Popup blocked. Please allow popups for report preview.');
+  loadFields(): void {
+    const sp = (this.procedureName || '').trim();
+    if (!sp) {
+      this.statusMessage = 'Stored procedure name din.';
       return;
     }
 
-    preview.document.open();
-    preview.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <title>${this.reportNo} - ${this.reportName}</title>
-          <style>${this.getPrintStyles()}</style>
-        </head>
-        <body>
-          <main class="preview-shell">
-            <div class="preview-toolbar no-print">
-              <strong>${this.reportNo}</strong>
-              <span>${this.reportName}</span>
-              <button onclick="window.print()">Print</button>
-              <button onclick="window.close()">Close</button>
-            </div>
-            <section class="report-only">
-              ${paper.outerHTML}
-            </section>
-          </main>
-        </body>
-      </html>`);
-    preview.document.close();
-    preview.focus();
+    this.isLoadingFields = true;
+    this.statusMessage = 'Loading fields...';
+    this.reportingApi.discoverFields(sp).pipe(catchError(() => of([]))).subscribe(fields => {
+      const fallback = this.getFallbackFields(sp);
+      const finalFields = (fields && fields.length ? fields : fallback).filter(Boolean);
+      this.availableFields = Array.from(new Set(finalFields));
+      this.layout.dataSource.fields = [...this.availableFields];
+      this.selectedFields = [...this.availableFields];
+      this.isLoadingFields = false;
+      this.statusMessage = this.availableFields.length ? `${this.availableFields.length} fields loaded.` : 'Field load hoy nai. SP name check korun.';
+      if (this.availableFields.length && !this.elements.length) this.createDefaultDesign();
+      this.buildPreviewRows();
+    });
   }
 
-  private getPrintStyles(): string {
-    return `
-      * { box-sizing: border-box; }
-      body { margin: 0; background: #e5e7eb; font-family: Arial, sans-serif; color: #111827; }
-      .preview-shell { min-height: 100vh; padding: 18px; }
-      .preview-toolbar { display: flex; gap: 12px; align-items: center; margin: 0 auto 14px; max-width: 1123px; background: #fff; border: 1px solid #d7e1ef; border-radius: 10px; padding: 10px 12px; box-shadow: 0 8px 20px rgba(15,35,69,.08); }
-      .preview-toolbar span { color: #64748b; flex: 1; }
-      .preview-toolbar button { border: 1px solid #d7e1ef; background: #fff; border-radius: 8px; padding: 8px 12px; font-weight: 700; cursor: pointer; }
-      .report-only { display: flex; justify-content: center; }
-      .paper { width: 794px; height: 1123px; background: #fff; border: 1px solid #d8e2ef; box-shadow: 0 10px 35px rgba(0,0,0,.18); position: relative; overflow: hidden; }
-      .paper.landscape { width: 1123px; height: 794px; }
-      .element { position: absolute; display: flex; align-items: center; justify-content: center; color: #111827; font-weight: 600; user-select: none; box-sizing: border-box; background: transparent; border: 0 !important; box-shadow: none !important; }
-      .image-box { width: 100%; height: 100%; border: 1px solid #d7e1ef; display: grid; place-items: center; text-align: center; color: #64748b; background: #f8fafc; line-height: 1.2; }
-      .table-element { display: block; overflow: hidden; }
-      .table-element table { width: 100%; height: 100%; border-collapse: collapse; font-size: 11px; background: #fff; }
-      .table-element th { background: #0f3b75; color: #fff; }
-      .table-element th, .table-element td { border: 1px solid #cbd5e1; padding: 5px; text-align: center; }
-      .total td { font-weight: 800; text-align: right !important; background: #f1f5f9; }
-      .line { width: 100%; border-top: 2px solid #111827; }
-      .rectangle-element { border: 2px solid #111827 !important; }
-      .rectangle-label { color: #64748b; font-size: 12px; }
-      .barcode-text { font-family: 'Courier New', monospace; font-size: 28px; letter-spacing: 2px; }
-      .qr-box { width: 100%; height: 100%; border: 8px solid #111827; display: grid; place-items: center; font-weight: 900; }
-      .page-break { width: 100%; border-top: 2px dashed #ef4444; color: #ef4444; font-size: 12px; text-align: center; padding-top: 4px; }
-      @page { size: A4; margin: 0; }
-      @media print {
-        body { background: #fff; }
-        .no-print { display: none !important; }
-        .preview-shell { padding: 0; }
-        .report-only { display: block; }
-        .paper { border: 0; box-shadow: none; margin: 0; page-break-after: always; }
-        .paper.landscape { width: 1123px; height: 794px; }
-      }
-    `;
+  private getFallbackFields(sp: string): string[] {
+    return this.fallbackFieldMap[sp] || this.fallbackFieldMap[Object.keys(this.fallbackFieldMap).find(k => k.toLowerCase() === sp.toLowerCase()) || ''] || [];
   }
 
-  trackByElementId(_: number, element: ReportElement): string {
-    return element.id;
+  createDefaultDesign(): void {
+    this.elements = [];
+    this.addElement('text', 'Company Name', 220, 22, 240, 26, 'reportHeader', { fontSize: 16, fontWeight: 700, textAlign: 'center' });
+    this.addElement('text', this.reportName || 'Report Title', 285, 54, 230, 26, 'reportHeader', { fontSize: 18, fontWeight: 700, textAlign: 'center', color: '#003b75' });
+    this.addTableFromFields(this.selectedFields.length ? this.selectedFields : this.availableFields);
   }
 
-  private enableDesignerInteractions(): void {
-    const getElement = (target: HTMLElement): ReportElement | undefined => {
-      const id = target.dataset['elementId'];
-      return this.layout.elements.find(x => x.id === id);
+  addTableFromFields(fields: string[]): void {
+    const visibleFields = fields.slice(0, 8);
+    if (!visibleFields.length) return;
+    const columns: ReportTableColumn[] = visibleFields.map(field => ({ field, caption: this.toCaption(field), width: Math.max(85, Math.floor(720 / visibleFields.length)), align: this.isNumericField(field) ? 'right' : 'left', aggregate: this.isAmountField(field) ? 'sum' : '' }));
+    const table = this.addElement('table', 'Table', 20, 172, 750, 64, 'details', { fontSize: 11 }, columns);
+    this.selectedElement = table;
+  }
+
+  addSingleField(field: string, band: SectionKey = 'details'): void {
+    const y = band === 'details' ? 185 : this.getBandTop(band) + 25;
+    this.selectedElement = this.addElement('field', field, 40, y, 150, 26, band, { fontSize: 12, border: '1px solid #cbd5e1', textAlign: this.isNumericField(field) ? 'right' : 'left' });
+  }
+
+  addToolElement(tool: BuilderTool): void {
+    this.selectedTool = tool;
+    if (tool === 'pointer') return;
+    if (tool === 'table') return this.addTableFromFields(this.selectedFields.length ? this.selectedFields : this.availableFields);
+    const band: SectionKey = tool === 'text' || tool === 'image' ? 'reportHeader' : 'details';
+    const label = tool === 'text' ? 'Text' : tool === 'field' ? (this.availableFields[0] || 'Field') : tool;
+    const height = tool === 'line' ? 6 : tool === 'rectangle' ? 50 : tool === 'image' ? 70 : 26;
+    const width = tool === 'line' ? 220 : tool === 'rectangle' ? 180 : tool === 'image' ? 100 : 150;
+    this.selectedElement = this.addElement(tool === 'field' ? 'field' : tool as any, label, 40, this.getBandTop(band) + 25, width, height, band, { fontSize: 12 });
+    this.selectedTool = 'pointer';
+  }
+
+  private addElement(type: any, label: string, x: number, y: number, width: number, height: number, band: SectionKey, style: Record<string, any> = {}, columns?: ReportTableColumn[]): DesignerElement {
+    const element: DesignerElement = {
+      id: this.newId(), type, label, x, y, width, height, band, section: 'body',
+      text: type === 'text' ? label : undefined,
+      field: type === 'field' ? label : undefined,
+      columns,
+      style: { color: '#111827', background: '#ffffff', borderColor: '#cbd5e1', fontSize: 12, fontWeight: 400, textAlign: 'left', ...style }
     };
-
-    interact('.report-design-element')
-      .draggable({
-        inertia: false,
-        modifiers: [
-          interact.modifiers.restrictRect({
-            restriction: '.paper',
-            endOnly: false
-          })
-        ],
-        listeners: {
-          move: event => {
-            const element = getElement(event.target as HTMLElement);
-            if (!element) return;
-            this.selectedElement = element;
-            element.x = this.snap(element.x + event.dx);
-            element.y = this.snap(element.y + event.dy);
-          }
-        }
-      })
-      .resizable({
-        edges: { left: true, right: true, bottom: true, top: true },
-        modifiers: [
-          interact.modifiers.restrictEdges({ outer: '.paper' }),
-          interact.modifiers.restrictSize({ min: { width: 24, height: 14 } })
-        ],
-        listeners: {
-          move: event => {
-            const element = getElement(event.target as HTMLElement);
-            if (!element) return;
-            this.selectedElement = element;
-            element.x = this.snap(element.x + event.deltaRect.left);
-            element.y = this.snap(element.y + event.deltaRect.top);
-            element.width = Math.max(24, this.snap(event.rect.width));
-            element.height = Math.max(14, this.snap(event.rect.height));
-          }
-        }
-      });
+    this.elements.push(element);
+    this.syncLayout();
+    return element;
   }
 
-  private refreshDesignerInteractions(): void {
-    setTimeout(() => this.enableDesignerInteractions());
+  private syncLayout(): void { this.layout.elements = this.elements as any; }
+
+  onFieldDragStart(event: DragEvent, field: string): void { event.dataTransfer?.setData('field', field); }
+  allowDrop(event: DragEvent): void { event.preventDefault(); }
+  onCanvasDrop(event: DragEvent): void {
+    event.preventDefault();
+    const field = event.dataTransfer?.getData('field');
+    if (!field) return;
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = Math.round((event.clientX - rect.left) / (this.zoom / 100));
+    const y = Math.round((event.clientY - rect.top) / (this.zoom / 100));
+    this.addSingleField(field, this.getBandByY(y));
+    if (this.selectedElement) { this.selectedElement.x = x; this.selectedElement.y = y; }
   }
 
-  private snap(value: number): number {
-    if (!this.snapToGrid) return Math.round(value);
-    return Math.round(value / this.gridSize) * this.gridSize;
+  selectElement(element: DesignerElement, event?: MouseEvent): void { event?.stopPropagation(); this.selectedElement = element; }
+  clearSelection(): void { this.selectedElement = undefined; }
+
+  startMove(event: MouseEvent, element: DesignerElement): void {
+    if ((event.target as HTMLElement).classList.contains('resize-handle')) return;
+    event.preventDefault(); event.stopPropagation(); this.selectElement(element);
+    this.dragStart = { id: element.id, x: event.clientX, y: event.clientY, elementX: element.x, elementY: element.y };
   }
 
-  private defaultText(type: ReportElement['type']): string {
-    if (type === 'barcode') return '||||||||||||';
-    if (type === 'qr') return 'QR';
-    if (type === 'pageBreak') return 'PAGE BREAK';
-    return this.toTitle(type);
+  startResize(event: MouseEvent, element: DesignerElement): void {
+    event.preventDefault(); event.stopPropagation(); this.selectElement(element);
+    this.resizeStart = { id: element.id, x: event.clientX, y: event.clientY, width: element.width, height: element.height };
   }
 
-  private toTitle(value: string): string {
-    return value.replace(/([A-Z])/g, ' $1').replace(/^./, x => x.toUpperCase());
+  onMouseMove(event: MouseEvent): void {
+    if (this.dragStart) {
+      const el = this.elements.find(x => x.id === this.dragStart?.id); if (!el) return;
+      el.x = Math.max(0, Math.round(this.dragStart.elementX + (event.clientX - this.dragStart.x) / (this.zoom / 100)));
+      el.y = Math.max(0, Math.round(this.dragStart.elementY + (event.clientY - this.dragStart.y) / (this.zoom / 100)));
+      el.band = this.getBandByY(el.y); this.syncLayout();
+    }
+    if (this.resizeStart) {
+      const el = this.elements.find(x => x.id === this.resizeStart?.id); if (!el) return;
+      el.width = Math.max(25, Math.round(this.resizeStart.width + (event.clientX - this.resizeStart.x) / (this.zoom / 100)));
+      el.height = Math.max(12, Math.round(this.resizeStart.height + (event.clientY - this.resizeStart.y) / (this.zoom / 100)));
+      this.syncLayout();
+    }
+  }
+
+  stopMouseAction(): void { this.dragStart = undefined; this.resizeStart = undefined; }
+
+  deleteSelected(): void {
+    if (!this.selectedElement) return;
+    this.elements = this.elements.filter(x => x.id !== this.selectedElement?.id);
+    this.selectedElement = undefined; this.syncLayout();
+  }
+
+  duplicateSelected(): void {
+    if (!this.selectedElement) return;
+    const copy: DesignerElement = JSON.parse(JSON.stringify(this.selectedElement));
+    copy.id = this.newId(); copy.x += 16; copy.y += 16; this.elements.push(copy); this.selectedElement = copy; this.syncLayout();
+  }
+
+  addColumn(field?: string): void {
+    if (!this.selectedElement || this.selectedElement.type !== 'table') return;
+    const useField = field || this.availableFields.find(x => !this.selectedElement?.columns?.some(c => c.field === x)) || this.availableFields[0] || 'Field';
+    this.selectedElement.columns = this.selectedElement.columns || [];
+    this.selectedElement.columns.push({ field: useField, caption: this.toCaption(useField), width: 100, align: this.isNumericField(useField) ? 'right' : 'left', aggregate: this.isAmountField(useField) ? 'sum' : '' });
+    this.syncLayout();
+  }
+
+  removeColumn(index: number): void { if (this.selectedElement?.columns) this.selectedElement.columns.splice(index, 1); this.syncLayout(); }
+
+  toggleField(field: string): void {
+    this.selectedFields = this.selectedFields.includes(field) ? this.selectedFields.filter(x => x !== field) : [...this.selectedFields, field];
+  }
+
+  selectAllFields(): void { this.selectedFields = [...this.availableFields]; }
+  clearSelectedFields(): void { this.selectedFields = []; }
+
+  createTableFromSelectedFields(): void { this.addTableFromFields(this.selectedFields.length ? this.selectedFields : this.availableFields); }
+
+  buildPreviewRows(): void {
+    const fields = this.availableFields.length ? this.availableFields : this.getFallbackFields(this.procedureName);
+    this.previewRows = [1, 2, 3, 4, 5].map(i => {
+      const row: Record<string, any> = {};
+      for (const f of fields) row[f] = this.sampleValue(f, i);
+      return row;
+    });
+  }
+
+  preview(): void { this.showPreview = true; this.buildPreviewRows(); }
+
+  save(): void {
+    this.syncLayout();
+    const payload = {
+      reportId: this.reportId || null,
+      reportNo: null,
+      reportKey: (this.reportName || 'New_Report').replace(/\s+/g, '_'),
+      reportName: this.reportName || 'New Report',
+      moduleId: null,
+      procedureName: this.procedureName,
+      reportType: 'LAYOUT',
+      selectedVariantCode: 'DEFAULT',
+      layoutJson: JSON.stringify(this.layout),
+      variants: [{ variantCode: 'DEFAULT', variantName: 'Default', isDefault: true, isActive: true }],
+      parameters: [],
+      templates: [{ templateName: 'Default', layoutJson: JSON.stringify(this.layout), isDefault: true, isActive: true, variantCode: 'DEFAULT' }]
+    };
+    this.reportingApi.saveDesigner(payload as any).pipe(catchError(() => of(null))).subscribe(result => {
+      this.statusMessage = result ? 'Report saved.' : 'Local design ready, but save API fail koreche.';
+    });
+  }
+
+  getBandTop(key: SectionKey): number { return this.bands.find(x => x.key === key)?.top || 0; }
+  getBandByY(y: number): SectionKey { return (this.bands.slice().reverse().find(b => y >= b.top)?.key || 'details'); }
+  getFieldType(field: string): string { return this.isNumericField(field) ? '123' : this.isDateField(field) ? 'DATE' : 'ABC'; }
+  isNumericField(field: string): boolean { return /(amount|qty|quantity|price|rate|total|balance|debit|credit|discount|empid|id)$/i.test(field); }
+  isDateField(field: string): boolean { return /date/i.test(field); }
+  isAmountField(field: string): boolean { return /(amount|total|balance|debit|credit)$/i.test(field); }
+  toCaption(field: string): string { return field.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' '); }
+  private newId(): string { return 'el_' + Math.random().toString(36).slice(2, 10); }
+  private sampleValue(field: string, i: number): any {
+    if (/email/i.test(field)) return `user${i}@company.com`;
+    if (/user/i.test(field)) return i === 1 ? 'admin' : `user${i}`;
+    if (/role/i.test(field)) return i % 2 ? 'Merchandiser' : 'Super Admin';
+    if (/area/i.test(field)) return 'Gazipur';
+    if (/status/i.test(field)) return 'Active';
+    if (/date/i.test(field)) return `0${i}-May-2024`;
+    if (/invoice/i.test(field)) return `INV-000${i}`;
+    if (/customer/i.test(field)) return i % 2 ? 'ABC Traders' : 'XYZ Store';
+    if (/product|item/i.test(field)) return `Product ${String.fromCharCode(64 + i)}`;
+    if (this.isNumericField(field)) return this.isAmountField(field) ? (i * 250).toFixed(2) : i * 2;
+    return `${this.toCaption(field)} ${i}`;
   }
 }

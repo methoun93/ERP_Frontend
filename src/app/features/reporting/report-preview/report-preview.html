@@ -1,56 +1,70 @@
 <section class="preview-page">
-  <div class="preview-toolbar no-print">
+  <div class="preview-toolbar no-print professional-toolbar">
     <div>
       <p class="eyebrow">Reporting</p>
       <h1>Report Preview</h1>
+      <p class="subtitle">{{ titleText }}</p>
     </div>
     <div class="actions">
       <input [(ngModel)]="reportKey" placeholder="Report Key" />
-      <input [(ngModel)]="orderId" placeholder="Order ID" />
-      <button type="button" (click)="render()">Render</button>
-      <button type="button" class="primary" (click)="print()">Print</button>
+      <input [(ngModel)]="variantCode" placeholder="Variant" />
+      <textarea [(ngModel)]="parametersJson" rows="1" placeholder='Parameters JSON, e.g. {"orderId":"..."}'></textarea>
+      <button type="button" (click)="render()" [disabled]="loading">{{ loading ? 'Rendering...' : 'Render' }}</button>
+      <button type="button" (click)="exportExcel()" [disabled]="!layout || !rows.length">Export CSV</button>
+      <button type="button" (click)="exportPdf()" [disabled]="!layout">PDF</button>
+      <button type="button" class="primary" (click)="print()" [disabled]="!layout">Print</button>
     </div>
   </div>
 
-  <div *ngIf="error" class="alert no-print">{{ error }} Demo preview is shown until render API is ready.</div>
+  <div *ngIf="error" class="alert no-print">{{ error }}</div>
 
-  <div class="paper">
-    <header class="report-header">
-      <div class="logo">LOGO</div>
-      <div class="company">
-        <h2>Company Name</h2>
-        <p>Address Line 1, Address Line 2</p>
-        <p>Phone: 0000000000, Email: info@company.com</p>
-        <h1>PURCHASE ORDER</h1>
-      </div>
-    </header>
+  <div *ngIf="!loading && !error && !layout" class="empty no-print">
+    No report layout found. Please save the template from Report Builder first.
+  </div>
 
-    <section class="meta-grid">
-      <div><b>Supplier</b><span>XYZ Garments Ltd.</span></div>
-      <div><b>Attention</b><span>Mr. John Doe</span></div>
-      <div><b>PO No</b><span>{{ orderId }}</span></div>
-      <div><b>Date</b><span>01-May-2024</span></div>
-      <div><b>Currency</b><span>USD</span></div>
-      <div><b>Delivery Date</b><span>10-May-2024</span></div>
-    </section>
+  <div *ngIf="layout" class="report-stage professional-stage">
+    <div class="paper" [style.width.px]="pageWidth" [style.height.px]="pageHeight">
+      <ng-container *ngFor="let element of sortedElements; trackBy: trackByElementId">
+        <div class="element" [ngClass]="element.type" [ngStyle]="elementStyle(element)">
+          <ng-container [ngSwitch]="element.type">
+            <ng-container *ngSwitchCase="'table'">
+              <table [style.fontSize.px]="tableFontSize(element)">
+                <thead>
+                  <tr [style.height.px]="tableHeaderHeight(element)">
+                    <th *ngFor="let column of displayColumns(element)" [style.width.px]="column.width || 120" [ngStyle]="tableHeaderStyle(element)">
+                      {{ column.caption || column.field }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of tableRows(element)" [style.height.px]="tableRowHeight(element)">
+                    <td *ngFor="let column of displayColumns(element)" [class.right]="column.align === 'right'" [class.center]="column.align === 'center'" [ngStyle]="tableCellBaseStyle(element)">
+                      <span [ngStyle]="cellStyle(element, column, row)">{{ value(row, column.field) }}</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="hasTotal(element)" class="total-row" [style.height.px]="tableRowHeight(element)">
+                    <td *ngFor="let column of displayColumns(element); let i = index" [class.right]="column.align === 'right'" [ngStyle]="totalRowStyle(element)">
+                      {{ column.aggregate ? total(element, column) : (i === 0 ? 'Total' : '') }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </ng-container>
 
-    <table class="report-table">
-      <thead>
-        <tr><th>SL</th><th>Item Code</th><th>Item Description</th><th>UOM</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of rows; let i = index">
-          <td>{{ i + 1 }}</td><td>{{ row.itemCode }}</td><td>{{ row.itemDescription }}</td><td>{{ row.uom }}</td><td>{{ row.qty | number }}</td><td>{{ row.rate | number:'1.2-2' }}</td><td>{{ row.amount | number:'1.2-2' }}</td>
-        </tr>
-        <tr class="total"><td colspan="6">Total Amount</td><td>{{ totalAmount | number:'1.2-2' }} USD</td></tr>
-      </tbody>
-    </table>
+            <ng-container *ngSwitchCase="'image'">
+              <img *ngIf="imageSource(element); else noImage" [src]="imageSource(element)" alt="Report image" />
+              <ng-template #noImage><span class="muted">Image</span></ng-template>
+            </ng-container>
 
-    <footer class="report-footer">
-      <div><b>Terms & Conditions</b><p>1. Payment within 30 days.</p><p>2. Quality as per sample.</p></div>
-      <div class="signature">Authorized Signature</div>
-    </footer>
-
-    <div class="page-no">Page 1 of 1</div>
+            <ng-container *ngSwitchCase="'line'"><span class="line-shape"></span></ng-container>
+            <ng-container *ngSwitchCase="'rectangle'"><span class="rect-shape"></span></ng-container>
+            <ng-container *ngSwitchCase="'barcode'"><span class="barcode-text">{{ renderText(element) }}</span></ng-container>
+            <ng-container *ngSwitchCase="'qr'"><span class="qr-box">{{ renderText(element) }}</span></ng-container>
+            <ng-container *ngSwitchCase="'pageBreak'"><span class="page-break-line">PAGE BREAK</span></ng-container>
+            <ng-container *ngSwitchDefault>{{ renderText(element) }}</ng-container>
+          </ng-container>
+        </div>
+      </ng-container>
+    </div>
   </div>
 </section>

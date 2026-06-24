@@ -39,11 +39,11 @@
       <div *ngIf="error" class="error-box">{{ error }}</div>
 
       <label>Username</label>
-      <input class="erp-input" name="username" [(ngModel)]="username" placeholder="admin" autocomplete="username" required />
+      <input class="erp-input" name="username" [(ngModel)]="username" placeholder="Enter your username" autocomplete="username" required />
 
       <label>Password</label>
       <div class="password-row">
-        <input class="erp-input" name="password" [(ngModel)]="password" [type]="showPassword ? 'text' : 'password'" placeholder="••••••" autocomplete="current-password" required />
+        <input class="erp-input" name="password" [(ngModel)]="password" [type]="showPassword ? 'text' : 'password'" placeholder="Enter your password" autocomplete="current-password" required />
         <button type="button" (click)="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
       </div>
 

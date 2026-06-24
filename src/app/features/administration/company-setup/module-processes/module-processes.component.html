@@ -1,0 +1,17 @@
+<div class="setup-page">
+  <aside class="module-list">
+    <h2>Modules</h2><p>Select a module to maintain process master data.</p>
+    <button *ngFor="let m of modules" class="module-card" [class.active]="selected?.moduleId===m.moduleId" (click)="selectModule(m)">
+      <span class="avatar">{{ (m.moduleName || 'M').charAt(0) }}</span><span>{{ m.moduleName }}</span><small>{{ m.totalProcesses }} processes</small>
+    </button>
+  </aside>
+  <section class="main-card">
+    <div class="card-title"><div><h2>Module Processes</h2><p>Create process master rows for the selected module.</p></div><button class="primary" (click)="add()">Add Process</button></div>
+    <div *ngIf="error" class="alert error">{{error}}</div><div *ngIf="success" class="alert success">{{success}}</div>
+    <div class="form-card" *ngIf="editing">
+      <input placeholder="Process Name" [(ngModel)]="editing.processName"><input placeholder="Process Key" [(ngModel)]="editing.processKey"><input placeholder="Icon Class" [(ngModel)]="editing.icon"><input type="number" placeholder="Sort Order" [(ngModel)]="editing.sortOrder"><label><input type="checkbox" [(ngModel)]="editing.isActive"> Active</label><button class="primary" (click)="save()" [disabled]="saving">Save</button><button (click)="editing=null">Cancel</button>
+    </div>
+    <table><thead><tr><th>#</th><th>Name</th><th>Key</th><th>Icon</th><th>Sort</th><th>Status</th><th>Action</th></tr></thead><tbody><tr *ngFor="let r of rows; let i=index"><td>{{i+1}}</td><td>{{r.processName}}</td><td>{{r.processKey}}</td><td><i [class]="r.icon"></i> {{r.icon}}</td><td>{{r.sortOrder}}</td><td><span class="badge" [class.off]="!r.isActive">{{r.isActive?'Active':'Inactive'}}</span></td><td><button (click)="edit(r)">Edit</button><button class="danger" (click)="remove(r)">Delete</button></td></tr></tbody></table>
+    <div class="empty" *ngIf="!rows.length && !loading">No process found. Click Add Process.</div>
+  </section>
+</div>

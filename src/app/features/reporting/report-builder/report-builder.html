@@ -1,223 +1,150 @@
-<section class="builder-page compact-builder">
-  <header class="builder-header">
-    <div>
-      <p class="eyebrow">Reporting</p>
+<div class="rb-page" (mousemove)="onMouseMove($event)" (mouseup)="stopMouseAction()" (mouseleave)="stopMouseAction()">
+  <header class="rb-header">
+    <div class="title-area">
       <h1>Report Builder</h1>
-      <p>Drag, move, resize, delete and style printable report elements.</p>
+      <span>Home › Report Builder › {{ reportName || 'New Report' }}</span>
     </div>
     <div class="header-actions">
-      <button type="button" (click)="printPreview()">Preview</button>
-      <button class="primary" type="button" (click)="saveLayout()">Save Template</button>
+      <button type="button" (click)="preview()">Preview</button>
+      <button type="button" (click)="save()">Save</button>
+      <button type="button" class="primary" (click)="save()">Save & Close</button>
     </div>
   </header>
 
-  <div class="tabs">
-    <button [class.active]="activeTab === 'design'" (click)="activeTab = 'design'">Design</button>
-    <button [class.active]="activeTab === 'template'" (click)="activeTab = 'template'">Template</button>
-    <button [class.active]="activeTab === 'variant'" (click)="activeTab = 'variant'">Variant</button>
-    <button [class.active]="activeTab === 'parameter'" (click)="activeTab = 'parameter'">Parameter</button>
-    <button [class.active]="activeTab === 'theme'" (click)="activeTab = 'theme'">Theme</button>
-    <button [class.active]="activeTab === 'image'" (click)="activeTab = 'image'">Image</button>
-    <button [class.active]="activeTab === 'page'" (click)="activeTab = 'page'">Page Setup</button>
-  </div>
+  <section class="report-config">
+    <label>Report Name<input [(ngModel)]="reportName" placeholder="Report Name" /></label>
+    <label>Stored Procedure<input list="spList" [ngModel]="procedureName" (ngModelChange)="setProcedure($event)" placeholder="Stored procedure name" /></label>
+    <datalist id="spList"><option *ngFor="let sp of commonStoredProcedures" [value]="sp"></option></datalist>
+    <button type="button" class="primary" (click)="loadFields()" [disabled]="isLoadingFields">{{ isLoadingFields ? 'Loading...' : 'Load Fields' }}</button>
+    <span class="status">{{ statusMessage }}</span>
+  </section>
 
-  <div class="builder-grid designer-workspace" *ngIf="activeTab === 'design'">
-    <aside class="left-stack">
-      <section class="panel toolbox">
-        <h3>Toolbox</h3>
-        <p class="helper">Click to add, then drag on canvas.</p>
-        <button *ngFor="let tool of tools" type="button" (click)="addElement(tool.type)">
-          <span>{{ tool.icon }}</span>{{ tool.label }}
-        </button>
-      </section>
-
-      <section class="panel layers">
-        <div class="panel-title-row">
-          <h3>Layers</h3>
-          <small>{{ layout.elements.length }}</small>
-        </div>
-        <button
-          *ngFor="let element of layout.elements.slice().reverse(); trackBy: trackByElementId"
-          type="button"
-          class="layer-row"
-          [class.active]="selectedElement?.id === element.id"
-          (click)="selectElement(element)">
-          <span>{{ element.type }}</span>
-          {{ element.label }}
-        </button>
-      </section>
-    </aside>
-
-    <main class="canvas-wrap">
-      <div class="canvas-toolbar">
-        <input [(ngModel)]="reportNo" placeholder="Report No" />
-        <input [(ngModel)]="reportName" placeholder="Report Name" />
-        <input [(ngModel)]="reportKey" placeholder="Report Key" />
-        <div class="toolbar-buttons">
-          <label class="toolbar-check"><input type="checkbox" [(ngModel)]="showGrid" /> Grid</label>
-          <label class="toolbar-check"><input type="checkbox" [(ngModel)]="snapToGrid" /> Snap</label>
-          <button type="button" class="fit-btn" (click)="fitToScreen()">Fit</button>
-          <select [(ngModel)]="zoom">
-            <option [ngValue]="50">50%</option>
-            <option [ngValue]="60">60%</option>
-            <option [ngValue]="70">70%</option>
-            <option [ngValue]="80">80%</option>
-            <option [ngValue]="90">90%</option>
-            <option [ngValue]="100">100%</option>
-          </select>
-        </div>
+  <main class="builder-grid">
+    <aside class="left-panel">
+      <div class="card">
+        <div class="step-title">1. Data Source</div>
+        <label>Stored Procedure<input [ngModel]="procedureName" (ngModelChange)="setProcedure($event)" /></label>
+        <button type="button" (click)="loadFields()" [disabled]="isLoadingFields">Load Fields</button>
       </div>
 
-      <div #paperViewport class="paper-scroll">
-        <div class="paper-scale" [style.transform]="'scale(' + (zoom / 100) + ')'">
-          <div
-            #paperCanvas
-            class="paper"
-            [class.landscape]="layout.pageSettings.orientation === 'Landscape'"
-            [class.show-grid]="showGrid"
-            (click)="clearSelection()">
-            <div
-              *ngFor="let element of layout.elements; trackBy: trackByElementId"
-              class="element report-design-element"
-              [attr.data-element-id]="element.id"
-              [class.selected]="selectedElement?.id === element.id"
-              [class.table-element]="element.type === 'table'"
-              [class.rectangle-element]="element.type === 'rectangle'"
-              [class.line-element]="element.type === 'line'"
-              [class.page-break-element]="element.type === 'pageBreak'"
-              [style.left.px]="element.x"
-              [style.top.px]="element.y"
-              [style.width.px]="element.width"
-              [style.height.px]="element.height"
-              [style.z-index]="layout.elements.indexOf(element) + 1"
-              (click)="selectElement(element, $event)">
+      <div class="card fields-card">
+        <div class="step-title">2. Available Fields</div>
+        <input class="search" [(ngModel)]="searchText" placeholder="Search fields..." />
+        <div class="field-actions" *ngIf="availableFields.length">
+          <button type="button" (click)="selectAllFields()">Select All</button>
+          <button type="button" (click)="clearSelectedFields()">Clear</button>
+          <button type="button" class="primary" (click)="createTableFromSelectedFields()">Create Table</button>
+        </div>
+        <div class="field-list" *ngIf="filteredFields.length; else noFields">
+          <div class="field-row" *ngFor="let field of filteredFields" draggable="true" (dragstart)="onFieldDragStart($event, field)">
+            <input type="checkbox" [checked]="selectedFields.includes(field)" (change)="toggleField(field)" />
+            <span class="field-type">{{ getFieldType(field) }}</span>
+            <span class="field-name">{{ field }}</span>
+            <button type="button" title="Add field" (click)="addSingleField(field)">+</button>
+          </div>
+        </div>
+        <ng-template #noFields>
+          <p class="muted">Stored procedure name diye Load Fields korun. API fail korleo known SP hole fallback fields load hobe.</p>
+        </ng-template>
+        <small>{{ availableFields.length }} fields loaded</small>
+      </div>
 
-              <button class="element-delete" type="button" title="Delete" *ngIf="selectedElement?.id === element.id" (click)="removeSelectedElement(); $event.stopPropagation()">×</button>
-              <span class="resize-hint" *ngIf="selectedElement?.id === element.id"></span>
+      <div class="card outline-card">
+        <div class="step-title">5. Outline</div>
+        <div class="outline-row" *ngFor="let band of bands">▦ {{ band.title }}</div>
+      </div>
+    </aside>
 
-              <ng-container [ngSwitch]="element.type">
-                <div *ngSwitchCase="'image'" class="image-box">Image<br><small>{{ element.imageUrl || 'Image URL' }}</small></div>
+    <section class="designer-panel">
+      <div class="tabs">
+        <button type="button" [class.active]="activeTab === 'design'" (click)="activeTab = 'design'">Design</button>
+        <button type="button" [class.active]="activeTab === 'format'" (click)="activeTab = 'format'">Format</button>
+        <button type="button" [class.active]="activeTab === 'pageSetup'" (click)="activeTab = 'pageSetup'">Page Setup</button>
+      </div>
+      <div class="toolbar">
+        <button type="button" [class.active]="selectedTool === 'pointer'" (click)="selectedTool = 'pointer'">Pointer</button>
+        <button type="button" (click)="addToolElement('text')">Text</button>
+        <button type="button" (click)="addToolElement('field')">Field</button>
+        <button type="button" (click)="addToolElement('line')">Line</button>
+        <button type="button" (click)="addToolElement('rectangle')">Rectangle</button>
+        <button type="button" (click)="addToolElement('image')">Image</button>
+        <button type="button" (click)="addToolElement('barcode')">Barcode</button>
+        <button type="button" class="strong" (click)="addToolElement('table')">Table</button>
+        <select [(ngModel)]="zoom"><option [ngValue]="75">75%</option><option [ngValue]="100">100%</option><option [ngValue]="125">125%</option></select>
+        <button type="button" [disabled]="!selectedElement" (click)="duplicateSelected()">Duplicate</button>
+        <button type="button" [disabled]="!selectedElement" (click)="deleteSelected()">Delete</button>
+      </div>
 
-                <table *ngSwitchCase="'table'">
-                  <thead>
-                    <tr><th *ngFor="let col of element.columns" [style.width.px]="col.width">{{ col.caption }}</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td *ngFor="let col of element.columns">[{{ col.field }}]</td></tr>
-                    <tr><td *ngFor="let col of element.columns">Data</td></tr>
-                    <tr class="total"><td [attr.colspan]="element.columns?.length || 1">Total</td></tr>
-                  </tbody>
-                </table>
+      <div class="canvas-wrap">
+        <div class="paper" [style.width.px]="pageWidth" [style.height.px]="canvasHeight" [style.transform]="'scale(' + zoom / 100 + ')'" (drop)="onCanvasDrop($event)" (dragover)="allowDrop($event)" (click)="clearSelection()">
+          <div class="band" *ngFor="let band of bands" [style.top.px]="band.top" [style.height.px]="band.height"><span>{{ band.title }}</span></div>
 
-                <div *ngSwitchCase="'line'" class="line"></div>
-                <div *ngSwitchCase="'rectangle'" class="rectangle-label">{{ element.text || element.label }}</div>
-                <div *ngSwitchCase="'barcode'" class="barcode-text">{{ element.text || '||||||||||||' }}</div>
-                <div *ngSwitchCase="'qr'" class="qr-box">QR</div>
-                <div *ngSwitchCase="'pageBreak'" class="page-break">PAGE BREAK</div>
-                <div *ngSwitchDefault>{{ element.text || element.label }}</div>
-              </ng-container>
+          <div class="element" *ngFor="let element of elements" [class.selected]="selectedElement?.id === element.id" [class.table-element]="element.type === 'table'" [style.left.px]="element.x" [style.top.px]="element.y" [style.width.px]="element.width" [style.height.px]="element.height" [style.fontSize.px]="element.style?.['fontSize']" [style.fontWeight]="element.style?.['fontWeight']" [style.textAlign]="element.style?.['textAlign']" [style.color]="element.style?.['color']" [style.background]="element.style?.['background']" (mousedown)="startMove($event, element)" (click)="selectElement(element, $event)">
+            <ng-container [ngSwitch]="element.type">
+              <span *ngSwitchCase="'text'">{{ element.text || element.label }}</span>
+              <span *ngSwitchCase="'field'">[{{ element.field || element.label }}]</span>
+              <div *ngSwitchCase="'line'" class="line-shape"></div>
+              <div *ngSwitchCase="'rectangle'" class="rectangle-shape"></div>
+              <div *ngSwitchCase="'image'" class="image-box">Image</div>
+              <div *ngSwitchCase="'barcode'" class="barcode-box">||||||||||||</div>
+              <table *ngSwitchCase="'table'" class="design-table">
+                <thead><tr><th *ngFor="let col of element.columns" [style.width.px]="col.width">{{ col.caption }}</th></tr></thead>
+                <tbody><tr><td *ngFor="let col of element.columns" [style.textAlign]="col.align">[{{ col.field }}]</td></tr></tbody>
+              </table>
+              <span *ngSwitchDefault>{{ element.label }}</span>
+            </ng-container>
+            <span class="resize-handle" (mousedown)="startResize($event, element)"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right-panel">
+      <div class="card properties-card">
+        <div class="step-title">4. Properties</div>
+        <div class="prop-tabs"><button class="active">Properties</button><button>Events</button></div>
+        <ng-container *ngIf="selectedElement; else emptyProps">
+          <label>Selected Control<input [(ngModel)]="selectedElement.label" /></label>
+          <div class="two-col">
+            <label>X<input type="number" [(ngModel)]="selectedElement.x" /></label>
+            <label>Y<input type="number" [(ngModel)]="selectedElement.y" /></label>
+            <label>Width<input type="number" [(ngModel)]="selectedElement.width" /></label>
+            <label>Height<input type="number" [(ngModel)]="selectedElement.height" /></label>
+          </div>
+          <label *ngIf="selectedElement.type === 'text'">Text<input [(ngModel)]="selectedElement.text" /></label>
+          <label *ngIf="selectedElement.type === 'field'">Field<select [(ngModel)]="selectedElement.field"><option *ngFor="let f of availableFields" [ngValue]="f">{{ f }}</option></select></label>
+          <div class="two-col">
+            <label>Font Size<input type="number" [(ngModel)]="selectedElement.style['fontSize']" /></label>
+            <label>Weight<select [(ngModel)]="selectedElement.style['fontWeight']"><option [ngValue]="400">Regular</option><option [ngValue]="600">Semi Bold</option><option [ngValue]="700">Bold</option></select></label>
+          </div>
+          <label>Text Align<select [(ngModel)]="selectedElement.style['textAlign']"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
+          <div class="two-col">
+            <label>Text Color<input type="color" [(ngModel)]="selectedElement.style['color']" /></label>
+            <label>Background<input type="color" [(ngModel)]="selectedElement.style['background']" /></label>
+          </div>
+
+          <div class="table-props" *ngIf="selectedElement.type === 'table'">
+            <div class="section-head"><b>Table Columns</b><button type="button" (click)="addColumn()">+ Column</button></div>
+            <div class="column-row" *ngFor="let col of selectedElement.columns; let i = index">
+              <input [(ngModel)]="col.caption" placeholder="Caption" />
+              <select [(ngModel)]="col.field"><option *ngFor="let f of availableFields" [ngValue]="f">{{ f }}</option></select>
+              <input type="number" [(ngModel)]="col.width" />
+              <select [(ngModel)]="col.align"><option value="left">L</option><option value="center">C</option><option value="right">R</option></select>
+              <button type="button" (click)="removeColumn(i)">×</button>
             </div>
           </div>
-        </div>
+        </ng-container>
+        <ng-template #emptyProps><p class="muted">Design area theke kono control select korle properties ekhane dekhabe.</p></ng-template>
       </div>
-    </main>
-
-    <aside class="panel properties">
-      <h3>Properties</h3>
-      <ng-container *ngIf="selectedElement; else noSelection">
-        <div class="selected-title">
-          <strong>{{ selectedElement.label }}</strong>
-          <small>{{ selectedElement.type }}</small>
-        </div>
-
-        <div class="property-actions">
-          <button type="button" (click)="duplicateSelectedElement()">Duplicate</button>
-          <button type="button" (click)="bringForward()">Front</button>
-          <button type="button" (click)="sendBackward()">Back</button>
-          <button type="button" class="danger" (click)="removeSelectedElement()">Remove</button>
-        </div>
-
-        <label>Label<input [(ngModel)]="selectedElement.label" /></label>
-        <label *ngIf="selectedElement.type !== 'table' && selectedElement.type !== 'image'">Text<input [(ngModel)]="selectedElement.text" /></label>
-        <label *ngIf="selectedElement.type === 'field'">Field<input [(ngModel)]="selectedElement.field" (ngModelChange)="selectedElement.text = '[' + selectedElement.field + ']'" /></label>
-
-        <div class="two-col">
-          <label>X<input type="number" [(ngModel)]="selectedElement.x" /></label>
-          <label>Y<input type="number" [(ngModel)]="selectedElement.y" /></label>
-        </div>
-        <div class="two-col">
-          <label>Width<input type="number" [(ngModel)]="selectedElement.width" /></label>
-          <label>Height<input type="number" [(ngModel)]="selectedElement.height" /></label>
-        </div>
-
-        <label *ngIf="selectedElement.type === 'image'">Image Link<input [(ngModel)]="selectedElement.imageUrl" placeholder="/uploads/logo.png" /></label>
-
-        <div *ngIf="selectedElement.type === 'table'" class="column-list">
-          <div class="panel-title-row">
-            <h4>Table Columns</h4>
-            <button type="button" (click)="addTableColumn()">+ Column</button>
-          </div>
-          <div *ngFor="let col of selectedElement.columns; let i = index" class="column-row">
-            <input [(ngModel)]="col.caption" placeholder="Caption" />
-            <input [(ngModel)]="col.field" placeholder="Field" />
-            <input type="number" [(ngModel)]="col.width" placeholder="Width" />
-            <button type="button" class="icon-danger" (click)="removeTableColumn(i)">×</button>
-          </div>
-        </div>
-
-        <div class="shortcut-note">
-          <strong>Shortcuts:</strong> Delete = remove, Ctrl+D = duplicate.
-        </div>
-      </ng-container>
-      <ng-template #noSelection>
-        <p class="muted">Select an element from canvas.</p>
-        <p class="muted small">Click a toolbox item, then drag or resize it on the page.</p>
-      </ng-template>
     </aside>
-  </div>
+  </main>
 
-  <div class="settings-card" *ngIf="activeTab === 'template'">
-    <h2>Template Manager</h2>
-    <table><tr><th>Template</th><th>Scope</th><th>Default</th></tr><tr *ngFor="let row of templates"><td>{{ row.templateName }}</td><td>{{ row.scope }}</td><td>{{ row.isDefault ? 'Yes' : 'No' }}</td></tr></table>
-  </div>
-
-  <div class="settings-card" *ngIf="activeTab === 'variant'">
-    <h2>Variant Manager</h2>
-    <table><tr><th>Variant Code</th><th>Variant Name</th><th>Default</th></tr><tr *ngFor="let row of variants"><td>{{ row.variantCode }}</td><td>{{ row.variantName }}</td><td>{{ row.isDefault ? 'Yes' : 'No' }}</td></tr></table>
-  </div>
-
-  <div class="settings-card" *ngIf="activeTab === 'parameter'">
-    <h2>Parameter Designer</h2>
-    <table><tr><th>Parameter</th><th>Display</th><th>Data Type</th><th>Control</th><th>Required</th></tr><tr *ngFor="let row of parameters"><td>{{ row.parameterName }}</td><td>{{ row.displayName }}</td><td>{{ row.dataType }}</td><td>{{ row.controlType }}</td><td>{{ row.isRequired ? 'Yes' : 'No' }}</td></tr></table>
-  </div>
-
-  <div class="settings-card form-grid" *ngIf="activeTab === 'theme'">
-    <h2>Theme / Style Designer</h2>
-    <label>Primary Color<input type="color" [(ngModel)]="layout.theme.primaryColor" /></label>
-    <label>Header Background<input type="color" [(ngModel)]="layout.theme.headerBackground" /></label>
-    <label>Header Text Color<input type="color" [(ngModel)]="layout.theme.headerTextColor" /></label>
-    <label>Border Color<input type="color" [(ngModel)]="layout.theme.borderColor" /></label>
-    <label>Text Color<input type="color" [(ngModel)]="layout.theme.textColor" /></label>
-  </div>
-
-  <div class="settings-card form-grid" *ngIf="activeTab === 'image'">
-    <h2>Image Manager</h2>
-    <label>Company Logo URL<input value="/uploads/company/logo.png" /></label>
-    <label>Signature URL<input value="/uploads/users/signature/admin.png" /></label>
-    <label>Watermark URL<input value="/uploads/company/watermark.png" /></label>
-    <label>Stamp URL<input value="/uploads/company/stamp.png" /></label>
-  </div>
-
-  <div class="settings-card form-grid" *ngIf="activeTab === 'page'">
-    <h2>Page Settings</h2>
-    <label>Paper Size<select [(ngModel)]="layout.pageSettings.pageSize"><option>A4</option><option>A5</option><option>Letter</option><option>Legal</option></select></label>
-    <label>Orientation<select [(ngModel)]="layout.pageSettings.orientation"><option>Portrait</option><option>Landscape</option></select></label>
-    <label>Top Margin<input type="number" [(ngModel)]="layout.pageSettings.marginTop" /></label>
-    <label>Right Margin<input type="number" [(ngModel)]="layout.pageSettings.marginRight" /></label>
-    <label>Bottom Margin<input type="number" [(ngModel)]="layout.pageSettings.marginBottom" /></label>
-    <label>Left Margin<input type="number" [(ngModel)]="layout.pageSettings.marginLeft" /></label>
-    <label class="check"><input type="checkbox" [(ngModel)]="layout.pageSettings.showPageNo" /> Show Page No</label>
-    <label class="check"><input type="checkbox" [(ngModel)]="layout.pageSettings.showPrintDate" /> Show Print Date</label>
-    <label class="check"><input type="checkbox" [(ngModel)]="layout.pageSettings.repeatHeader" /> Repeat Header</label>
-  </div>
-</section>
+  <section class="preview-panel" *ngIf="showPreview">
+    <div class="preview-head"><span class="step-title">6. Preview</span><button type="button" (click)="buildPreviewRows()">Refresh</button></div>
+    <h2>{{ reportName }}</h2>
+    <table class="preview-table" *ngIf="availableFields.length">
+      <thead><tr><th *ngFor="let f of availableFields.slice(0, 10)">{{ toCaption(f) }}</th></tr></thead>
+      <tbody><tr *ngFor="let row of previewRows"><td *ngFor="let f of availableFields.slice(0, 10)">{{ row[f] }}</td></tr></tbody>
+    </table>
+  </section>
+</div>

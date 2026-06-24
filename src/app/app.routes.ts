@@ -13,6 +13,7 @@ import { ReportingDashboard } from './features/reporting/reporting-dashboard/rep
 import { ReportLibrary } from './features/reporting/report-library/report-library';
 import { ReportBuilder } from './features/reporting/report-builder/report-builder';
 import { ReportPreview } from './features/reporting/report-preview/report-preview';
+import { ModuleActionSetupComponent } from './features/administration/company-setup/module-action-setup/module-action-setup.component';
 
 export const routes: Routes = [
   {
@@ -75,6 +76,39 @@ export const routes: Routes = [
         data: { breadcrumb: 'Page Not Found' }
       },
 
+
+
+
+      {
+        path: 'administration/company-setup/module-action-setup',
+        component: ModuleActionSetupComponent,
+        canActivate: [erpRouteGuard],
+        data: { breadcrumb: 'Module Action Setup' }
+      },
+
+      {
+        path: 'administration/company-setup/company-processes',
+        redirectTo: 'administration/company-setup/module-action-setup',
+        pathMatch: 'full'
+      },
+
+      {
+        path: 'administration/company-setup/module-processes',
+        redirectTo: 'administration/company-setup/module-action-setup',
+        pathMatch: 'full'
+      },
+
+      {
+        path: 'administration/company-setup/process-auto-rules',
+        redirectTo: 'administration/company-setup/module-action-setup',
+        pathMatch: 'full'
+      },
+
+      {
+        path: 'administration/company-setup/process-tracking',
+        redirectTo: 'administration/company-setup/module-action-setup',
+        pathMatch: 'full'
+      },
 
       {
         path: 'administration/user-setup/create-user',

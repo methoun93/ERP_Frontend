@@ -1,0 +1,106 @@
+<div class="module-action-page">
+  <div *ngIf="error" class="alert error">{{ error }}</div>
+  <div *ngIf="success" class="alert success">{{ success }}</div>
+
+  <div class="setup-shell">
+    <aside class="module-panel">
+      <div class="panel-title">
+        <div>
+          <h3>Modules</h3>
+          <p>Select a module</p>
+        </div>
+        <button type="button" class="icon-btn" title="Refresh" (click)="loadModules()" [disabled]="loadingModules">
+          <i class="pi pi-refresh"></i>
+        </button>
+      </div>
+
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input type="text" placeholder="Search module" [(ngModel)]="moduleSearch">
+      </div>
+
+      <div class="module-list">
+        <button type="button" class="module-card" *ngFor="let module of filteredModules; trackBy: trackByModule"
+          [class.active]="selectedModule?.moduleId === module.moduleId" (click)="selectModule(module)">
+          <span class="module-icon"><i [class]="module.moduleIcon || 'pi pi-box'"></i></span>
+          <span class="module-text">
+            <strong>{{ module.moduleName }}</strong>
+            <small>{{ module.enabledActions }} enabled / {{ module.totalActions }} actions</small>
+          </span>
+        </button>
+
+        <div class="empty compact" *ngIf="!loadingModules && !filteredModules.length">No module found.</div>
+        <div class="empty compact" *ngIf="loadingModules">Loading modules...</div>
+      </div>
+    </aside>
+
+    <section class="action-panel">
+      <div class="action-toolbar">
+        <div>
+          <h3>{{ selectedModule?.moduleName || 'Select Module' }} Actions</h3>
+          <p>Company-wise enable/disable and rule setup</p>
+        </div>
+        <div class="toolbar-actions">
+          <div class="search-box action-search">
+            <i class="pi pi-search"></i>
+            <input type="text" placeholder="Search action" [(ngModel)]="actionSearch">
+          </div>
+          <button type="button" class="outline-btn" (click)="addAction()" [disabled]="!selectedModule">
+            <i class="pi pi-plus"></i> Add Action
+          </button>
+          <button type="button" class="save-btn" (click)="save()" [disabled]="saving || !selectedModule">
+            <i class="pi pi-save"></i> {{ saving ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="table-box" *ngIf="!loadingActions; else loadingTpl">
+        <table class="setup-table" *ngIf="actions.length; else noActionsTpl">
+          <thead>
+            <tr>
+              <th class="sl">SL</th>
+              <th>Action Name</th>
+              <th>Action Key</th>
+              <th class="enabled">Enabled</th>
+              <th>Rule Type</th>
+              <th>Rule / Formula</th>
+              <th>Description</th>
+              <th class="sort">Sort</th>
+              <th class="actions-col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredActions; let i = index; trackBy: trackByAction">
+              <td class="sl">{{ i + 1 }}</td>
+              <td><input class="cell-input" [(ngModel)]="row.actionName" (blur)="updateKey(row)" placeholder="Action name"></td>
+              <td><input class="cell-input key" [(ngModel)]="row.actionKey" placeholder="ACTION_KEY"></td>
+              <td class="enabled">
+                <label class="switch"><input type="checkbox" [(ngModel)]="row.isEnabled"><span></span></label>
+              </td>
+              <td>
+                <select class="cell-input" [(ngModel)]="row.ruleType">
+                  <option *ngFor="let type of ruleTypes" [value]="type">{{ type }}</option>
+                </select>
+              </td>
+              <td><input class="cell-input" [(ngModel)]="row.ruleValue" placeholder="Example: CM = OrderValue * Total"></td>
+              <td><input class="cell-input" [(ngModel)]="row.description" placeholder="Description"></td>
+              <td class="sort"><input class="cell-input sort-input" type="number" [(ngModel)]="row.sortOrder"></td>
+              <td class="actions-col">
+                <button type="button" class="row-btn danger" title="Delete" (click)="removeAction(row)"><i class="pi pi-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #loadingTpl><div class="empty big">Loading actions...</div></ng-template>
+      <ng-template #noActionsTpl>
+        <div class="empty big">
+          <i class="pi pi-sliders-h"></i>
+          <strong>No action setup found</strong>
+          <span>Select a module and click Add Action to create rules.</span>
+        </div>
+      </ng-template>
+    </section>
+  </div>
+</div>
