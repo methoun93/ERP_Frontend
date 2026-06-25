@@ -5,6 +5,7 @@ on:
     branches:
       - development
       - master
+
   pull_request:
     branches:
       - development
@@ -27,11 +28,13 @@ jobs:
 
       - name: Install dependencies
         shell: powershell
-        run: npm ci
+        run: |
+          npm ci
 
       - name: Build production bundle
         shell: powershell
-        run: npm run build
+        run: |
+          npm run build
 
       - name: Deploy to IIS frontend site
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -40,19 +43,59 @@ jobs:
           $source = Join-Path $env:GITHUB_WORKSPACE "dist\ERP_Frontend\browser"
           $target = "C:\Sites\ERP\Client"
 
+          $backupRoot = "C:\Sites\ERP\Backup"
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          $backupFolder = Join-Path $backupRoot "Client_$timestamp"
+
           if (!(Test-Path $source)) {
-            Write-Error "Build output not found: $source"
-            exit 1
+              Write-Error "Build output not found: $source"
+              exit 1
           }
 
           if (!(Test-Path $target)) {
-            New-Item -ItemType Directory -Path $target -Force | Out-Null
+              New-Item -ItemType Directory -Path $target -Force | Out-Null
           }
 
+          if (!(Test-Path $backupRoot)) {
+              New-Item -ItemType Directory -Path $backupRoot -Force | Out-Null
+          }
+
+          Write-Host "Creating backup: $backupFolder"
+
+          New-Item -ItemType Directory -Path $backupFolder -Force | Out-Null
+
+          Copy-Item `
+              -Path "$target\*" `
+              -Destination $backupFolder `
+              -Recurse `
+              -Force
+
+          Write-Host "Backup created successfully."
+
+          Write-Host "Keeping latest 10 Client backups only..."
+
+          Get-ChildItem -Path $backupRoot -Directory -Filter "Client_*" |
+              Sort-Object LastWriteTime -Descending |
+              Select-Object -Skip 10 |
+              ForEach-Object {
+                  Write-Host "Deleting old backup: $($_.FullName)"
+                  Remove-Item $_.FullName -Recurse -Force
+              }
+
+          Write-Host "Cleaning target folder..."
+
           Get-ChildItem -Path $target -Force |
-            Where-Object { $_.Name -ne "web.config" } |
-            Remove-Item -Recurse -Force
+              Where-Object { $_.Name -ne "web.config" } |
+              Remove-Item -Recurse -Force
 
-          Copy-Item -Path "$source\*" -Destination $target -Recurse -Force
+          Write-Host "Deploying frontend..."
 
-          Write-Host "Frontend deployed successfully to $target"
+          Copy-Item `
+              -Path "$source\*" `
+              -Destination $target `
+              -Recurse `
+              -Force
+
+          Write-Host "Frontend deployed successfully."
+          Write-Host "Deployment Location : $target"
+          Write-Host "Backup Location     : $backupFolder"
