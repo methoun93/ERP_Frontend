@@ -32,3 +32,27 @@ jobs:
       - name: Build production bundle
         shell: powershell
         run: npm run build
+
+      - name: Deploy to IIS frontend site
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        shell: powershell
+        run: |
+          $source = Join-Path $env:GITHUB_WORKSPACE "dist\ERP_Frontend\browser"
+          $target = "C:\Sites\ERP\Client"
+
+          if (!(Test-Path $source)) {
+            Write-Error "Build output not found: $source"
+            exit 1
+          }
+
+          if (!(Test-Path $target)) {
+            New-Item -ItemType Directory -Path $target -Force | Out-Null
+          }
+
+          Get-ChildItem -Path $target -Force |
+            Where-Object { $_.Name -ne "web.config" } |
+            Remove-Item -Recurse -Force
+
+          Copy-Item -Path "$source\*" -Destination $target -Recurse -Force
+
+          Write-Host "Frontend deployed successfully to $target"
